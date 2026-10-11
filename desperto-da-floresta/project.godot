@@ -11,6 +11,7 @@ config_version=5
 [application]
 
 config/name="Desperto da Floresta"
+run/main_scene="res://valtair/scenes/test_arena.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://icon.svg"
 
