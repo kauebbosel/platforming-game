@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="MapTheme" load_steps=12 format=3]
+
+[ext_resource type="Script" path="res://valtair/map/map_theme.gd" id="1"]
+[ext_resource type="Texture2D" path="res://valtair/map/art/background.png" id="2"]
+[ext_resource type="Texture2D" path="res://valtair/map/art/player_marker.png" id="3"]
+[ext_resource type="Texture2D" path="res://valtair/map/art/icon_combate.png" id="4"]
+[ext_resource type="Texture2D" path="res://valtair/map/art/icon_parkour.png" id="5"]
+[ext_resource type="Texture2D" path="res://valtair/map/art/icon_miniboss.png" id="6"]
+[ext_resource type="Texture2D" path="res://valtair/map/art/icon_mercadora.png" id="7"]
+[ext_resource type="Texture2D" path="res://valtair/map/art/icon_descanso.png" id="8"]
+[ext_resource type="Texture2D" path="res://valtair/map/art/icon_evento.png" id="9"]
+[ext_resource type="Texture2D" path="res://valtair/map/art/icon_midboss.png" id="10"]
+[ext_resource type="Texture2D" path="res://valtair/map/art/icon_boss.png" id="11"]
+
+[resource]
+script = ExtResource("1")
+background = ExtResource("2")
+player_marker = ExtResource("3")
+icon_combate = ExtResource("4")
+icon_parkour = ExtResource("5")
+icon_miniboss = ExtResource("6")
+icon_mercadora = ExtResource("7")
+icon_descanso = ExtResource("8")
+icon_evento = ExtResource("9")
+icon_midboss = ExtResource("10")
+icon_boss = ExtResource("11")
