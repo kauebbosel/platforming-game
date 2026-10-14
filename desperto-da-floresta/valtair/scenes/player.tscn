@@ -1,12 +1,14 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene format=3 uid="uid://cl1nmi42voduh"]
 
-[ext_resource type="Script" path="res://valtair/scripts/player/player.gd" id="1"]
-[ext_resource type="Script" path="res://valtair/scripts/components/movement_component.gd" id="2"]
-[ext_resource type="Script" path="res://valtair/scripts/components/jump_component.gd" id="3"]
-[ext_resource type="Script" path="res://valtair/scripts/components/attack_component.gd" id="4"]
-[ext_resource type="Script" path="res://valtair/scripts/components/hitbox.gd" id="5"]
-[ext_resource type="Script" path="res://valtair/scripts/components/health_component.gd" id="6"]
-[ext_resource type="Script" path="res://valtair/scripts/components/hurtbox.gd" id="7"]
+[ext_resource type="Script" uid="uid://b44md5dh3o6j5" path="res://valtair/scripts/player/player.gd" id="1"]
+[ext_resource type="Script" uid="uid://do1kggn8mlhwq" path="res://valtair/scripts/components/movement_component.gd" id="2"]
+[ext_resource type="Texture2D" uid="uid://dwijeua8sbq47" path="res://verificar/based.png" id="2_l48rg"]
+[ext_resource type="Script" uid="uid://b4drnjsv52cbs" path="res://valtair/scripts/components/jump_component.gd" id="3"]
+[ext_resource type="Script" uid="uid://bck7j34xyv288" path="res://valtair/scripts/components/attack_component.gd" id="4"]
+[ext_resource type="Script" uid="uid://bprjvu4g3lmvd" path="res://valtair/scripts/components/hitbox.gd" id="5"]
+[ext_resource type="Script" uid="uid://b4101c84uef8o" path="res://valtair/scripts/components/health_component.gd" id="6"]
+[ext_resource type="Script" uid="uid://cejkgwdmbli8w" path="res://valtair/scripts/components/hurtbox.gd" id="7"]
+[ext_resource type="Texture2D" uid="uid://drutiotplsne0" path="res://valtair/sprites/slash_fx.png" id="8_ys87s"]
 
 [sub_resource type="RectangleShape2D" id="body_shape"]
 size = Vector2(14, 28)
@@ -17,50 +19,48 @@ size = Vector2(26, 24)
 [sub_resource type="RectangleShape2D" id="hurt_shape"]
 size = Vector2(14, 28)
 
-[node name="Player" type="CharacterBody2D"]
+[node name="Player" type="CharacterBody2D" unique_id=1274089227]
 script = ExtResource("1")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1435026753]
 position = Vector2(0, -14)
 shape = SubResource("body_shape")
 
-[node name="Visual" type="Node2D" parent="."]
+[node name="Visual" type="Node2D" parent="." unique_id=1807725101]
 
-[node name="Body" type="Polygon2D" parent="Visual"]
-color = Color(0.2, 0.55, 0.9, 1)
-polygon = PackedVector2Array(-7, -28, 7, -28, 7, 0, -7, 0)
+[node name="Sprite2D" type="Sprite2D" parent="Visual" unique_id=2078393505]
+texture = ExtResource("2_l48rg")
+offset = Vector2(0, -16)
 
-[node name="Eye" type="Polygon2D" parent="Visual"]
-polygon = PackedVector2Array(2, -23, 6, -23, 6, -19, 2, -19)
-
-[node name="Movement" type="Node" parent="."]
+[node name="Movement" type="Node" parent="." unique_id=858207675]
 script = ExtResource("2")
 
-[node name="Jump" type="Node" parent="."]
+[node name="Jump" type="Node" parent="." unique_id=418833641]
 script = ExtResource("3")
 
-[node name="Health" type="Node" parent="."]
+[node name="Health" type="Node" parent="." unique_id=286975665]
 script = ExtResource("6")
 
-[node name="Attack" type="Node2D" parent="."]
+[node name="Attack" type="Node2D" parent="." unique_id=389030333]
 script = ExtResource("4")
 
-[node name="Hitbox" type="Area2D" parent="Attack"]
-position = Vector2(20, -14)
+[node name="Hitbox" type="Area2D" parent="Attack" unique_id=2135191965]
+position = Vector2(22, -16)
+scale = Vector2(0.5, 0.5)
 script = ExtResource("5")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Attack/Hitbox"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Attack/Hitbox" unique_id=998711320]
 shape = SubResource("hit_shape")
 
-[node name="SlashFX" type="Polygon2D" parent="Attack"]
-position = Vector2(20, -14)
-color = Color(1, 1, 1, 0.6)
-polygon = PackedVector2Array(-13, -12, 13, -12, 13, 12, -13, 12)
+[node name="SlashFX" type="Sprite2D" parent="Attack" unique_id=734150383]
+position = Vector2(22, -16)
+scale = Vector2(0.5, 0.5)
+texture = ExtResource("8_ys87s")
 
-[node name="Hurtbox" type="Area2D" parent="."]
+[node name="Hurtbox" type="Area2D" parent="." unique_id=1263411882]
 position = Vector2(0, -14)
 script = ExtResource("7")
 team = &"player"
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox" unique_id=426946419]
 shape = SubResource("hurt_shape")
