@@ -1,0 +1,27 @@
+# Caches e arquivos temporários da Godot Engine
+.godot/
+.import/
+
+# Executáveis e builds exportados
+*.apk
+*.aab
+*.exe
+*.a
+*.o
+*.so
+*.dylib
+*.dll
+*.class
+*.jar
+*.zip
+*.tar.gz
+
+# Configurações locais do editor e arquivos temporários
+*.translation
+*.tmp
+
+# Sistema Operacional e IDEs (VSCode, JetBrains)
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
