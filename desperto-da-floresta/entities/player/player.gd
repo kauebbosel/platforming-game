@@ -1,50 +1,46 @@
+# entities/player/player.gd
 class_name Player
 extends CharacterBody2D
-## Orquestrador do Valtair. Não tem lógica de movimento própria: só chama os
-## componentes NA ORDEM CERTA e depois move_and_slide().
-## (Os componentes não usam _physics_process para não depender da ordem da árvore.)
+## Controlador principal do Player.
 
-signal facing_changed(facing: int)
+@export var stats: PlayerStats
 
-@onready var movement: MovementComponent = $Movement
-@onready var jump: JumpComponent = $Jump
-@onready var attack: AttackComponent = $Attack
-@onready var health: HealthComponent = $Health
-@onready var visual: Node2D = $Visual
-@onready var slash_fx: CanvasItem = get_node_or_null("Attack/SlashFX")
+@onready var state_machine: StateMachine = $StateMachine
+@onready var sprite: Sprite2D = $Visual/Sprite2D
 
-var facing: int = 1
-
+var coyote_timer: float = 0.0
+var jump_buffer_timer: float = 0.0
+var jump_buffered: bool = false
 
 func _ready() -> void:
-	InputSetup.ensure_actions()
-	attack.active_started.connect(func() -> void: _set_slash(true))
-	attack.active_ended.connect(func() -> void: _set_slash(false))
-	_set_slash(false)
-
+	assert(stats != null, "ERRO: O recurso PlayerStats.tres precisa ser atribuído no Inspetor do Player!")
+	state_machine.init(self)
 
 func _physics_process(delta: float) -> void:
-	var dir := Input.get_axis(&"move_left", &"move_right")
+	if coyote_timer > 0.0:
+		coyote_timer -= delta
 
-	# Vira para o lado do input, exceto no meio de um ataque.
-	if dir != 0.0 and not attack.is_attacking():
-		_set_facing(1 if dir > 0.0 else -1)
+func apply_gravity(delta: float) -> void:
+	if not is_on_floor():
+		velocity.y = move_toward(velocity.y, stats.max_fall_speed, stats.gravity * delta)
 
-	attack.update(delta)
-	movement.update(delta, dir, attack.movement_multiplier())
-	jump.update(delta)
-	move_and_slide()
+func can_jump() -> bool:
+	return is_on_floor() or coyote_timer > 0.0
 
+func start_coyote_timer() -> void:
+	coyote_timer = stats.coyote_time
 
-func _set_facing(new_facing: int) -> void:
-	if new_facing == facing:
-		return
-	facing = new_facing
-	visual.scale.x = float(facing)
-	attack.set_facing(facing)
-	facing_changed.emit(facing)
+func handle_jump_buffer(delta: float) -> void:
+	if Input.is_action_just_pressed("jump"):
+		jump_buffer_timer = stats.jump_buffer
+		jump_buffered = true
+	elif jump_buffered:
+		jump_buffer_timer -= delta
+		if jump_buffer_timer <= 0.0:
+			jump_buffered = false
 
-
-func _set_slash(on: bool) -> void:
-	if slash_fx:
-		slash_fx.visible = on
+func update_facing_direction(input_x: float) -> void:
+	if input_x > 0.0:
+		sprite.flip_h = false
+	elif input_x < 0.0:
+		sprite.flip_h = true

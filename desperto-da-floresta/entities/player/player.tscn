@@ -2,12 +2,17 @@
 
 [ext_resource type="Script" uid="uid://b44md5dh3o6j5" path="res://entities/player/player.gd" id="1_26q78"]
 [ext_resource type="Script" uid="uid://do1kggn8mlhwq" path="res://components/movement_component.gd" id="2_bectd"]
+[ext_resource type="Script" uid="uid://b2ef0w7517ktb" path="res://entities/player/player_stats.gd" id="2_wvtmh"]
 [ext_resource type="Script" uid="uid://b4drnjsv52cbs" path="res://components/jump_component.gd" id="3_wvtmh"]
 [ext_resource type="Script" uid="uid://b4101c84uef8o" path="res://components/health_component.gd" id="4_7thud"]
 [ext_resource type="Script" uid="uid://bck7j34xyv288" path="res://components/attack_component.gd" id="5_a1qjk"]
 [ext_resource type="Script" uid="uid://bprjvu4g3lmvd" path="res://components/hitbox.gd" id="6_j3ovn"]
 [ext_resource type="Texture2D" uid="uid://drutiotplsne0" path="res://entities/player/slash_fx.png" id="7_afbqv"]
 [ext_resource type="Script" uid="uid://cejkgwdmbli8w" path="res://components/hurtbox.gd" id="8_gx6sm"]
+
+[sub_resource type="Resource" id="Resource_itxoo"]
+script = ExtResource("2_wvtmh")
+metadata/_custom_type_script = "uid://b2ef0w7517ktb"
 
 [sub_resource type="RectangleShape2D" id="body_shape"]
 size = Vector2(14, 28)
@@ -23,6 +28,7 @@ size = Vector2(14, 28)
 
 [node name="Player" type="CharacterBody2D" unique_id=1274089227]
 script = ExtResource("1_26q78")
+stats = SubResource("Resource_itxoo")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1435026753]
 position = Vector2(0, -14)
