@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://di7ivb6y5gt60"
-path="res://.godot/imported/icon_evento.png-893a5247d875f64c0e54d4f7bd089d0d.ctex"
+uid="uid://dwijeua8sbq47"
+path="res://.godot/imported/based.png-32b71a58e3abb4d88a24ac4fa408e5e7.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://valtair/map/art/icon_evento.png"
-dest_files=["res://.godot/imported/icon_evento.png-893a5247d875f64c0e54d4f7bd089d0d.ctex"]
+source_file="res://entities/player/based.png"
+dest_files=["res://.godot/imported/based.png-32b71a58e3abb4d88a24ac4fa408e5e7.ctex"]
 
 [params]
 

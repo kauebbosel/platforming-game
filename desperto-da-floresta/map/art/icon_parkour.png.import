@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://d0hgk1effho6a"
-path="res://.godot/imported/mushroom-creature.png-210e49f16037d7e0077659c913a7e012.ctex"
+uid="uid://dg7mxirm2iihx"
+path="res://.godot/imported/icon_parkour.png-8657d221bad32e1091086ea74d33ead4.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://valtair/sprites/mushroom-creature.png"
-dest_files=["res://.godot/imported/mushroom-creature.png-210e49f16037d7e0077659c913a7e012.ctex"]
+source_file="res://map/art/icon_parkour.png"
+dest_files=["res://.godot/imported/icon_parkour.png-8657d221bad32e1091086ea74d33ead4.ctex"]
 
 [params]
 

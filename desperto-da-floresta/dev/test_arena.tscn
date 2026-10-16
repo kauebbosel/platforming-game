@@ -1,8 +1,8 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene format=3]
 
-[ext_resource type="PackedScene" path="res://valtair/scenes/player.tscn" id="1"]
-[ext_resource type="PackedScene" path="res://valtair/scenes/training_dummy.tscn" id="2"]
-[ext_resource type="Script" path="res://valtair/scripts/camera/camera_rig.gd" id="3"]
+[ext_resource type="PackedScene" uid="uid://cl1nmi42voduh" path="res://entities/player/player.tscn" id="1"]
+[ext_resource type="PackedScene" uid="uid://dc3cg0r1sq183" path="res://dev/training_dummy.tscn" id="2"]
+[ext_resource type="Script" uid="uid://ce0fu2nsbfacq" path="res://components/camera/camera_rig.gd" id="3"]
 
 [sub_resource type="RectangleShape2D" id="floor_shape"]
 size = Vector2(640, 40)

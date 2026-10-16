@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://drutiotplsne0"
-path="res://.godot/imported/slash_fx.png-4306c68ee5d1b47b4e95eefef28599f2.ctex"
+uid="uid://d0hgk1effho6a"
+path="res://.godot/imported/mushroom_creature.png-ead7d68b226102a4664d1b45b646e23b.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://valtair/sprites/slash_fx.png"
-dest_files=["res://.godot/imported/slash_fx.png-4306c68ee5d1b47b4e95eefef28599f2.ctex"]
+source_file="res://entities/enemies/mushroom_guy/mushroom_creature.png"
+dest_files=["res://.godot/imported/mushroom_creature.png-ead7d68b226102a4664d1b45b646e23b.ctex"]
 
 [params]
 

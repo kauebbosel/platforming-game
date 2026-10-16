@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://debx4lpim485p"
-path="res://.godot/imported/icon_boss.png-278fb9a2673f02999ef1dd9c06c49e3e.ctex"
+uid="uid://d3dfc27w7agh8"
+path="res://.godot/imported/icon_midboss.png-a506a21fec5c62132ce1f72ac5b984f8.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://valtair/map/art/icon_boss.png"
-dest_files=["res://.godot/imported/icon_boss.png-278fb9a2673f02999ef1dd9c06c49e3e.ctex"]
+source_file="res://map/art/icon_midboss.png"
+dest_files=["res://.godot/imported/icon_midboss.png-a506a21fec5c62132ce1f72ac5b984f8.ctex"]
 
 [params]
 

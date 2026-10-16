@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dg7mxirm2iihx"
-path="res://.godot/imported/icon_parkour.png-46ca78cfe16f939a77c3a02ca24bf3f6.ctex"
+uid="uid://5cqox2lvubf7"
+path="res://.godot/imported/background.png-91dc8d073a0125ff0eb4105ca85795c1.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://valtair/map/art/icon_parkour.png"
-dest_files=["res://.godot/imported/icon_parkour.png-46ca78cfe16f939a77c3a02ca24bf3f6.ctex"]
+source_file="res://map/art/background.png"
+dest_files=["res://.godot/imported/background.png-91dc8d073a0125ff0eb4105ca85795c1.ctex"]
 
 [params]
 

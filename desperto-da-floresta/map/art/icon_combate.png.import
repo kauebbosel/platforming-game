@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dewix5dbypuno"
-path="res://.godot/imported/icon_miniboss.png-fe8eab73ce45b757266352bf78428b71.ctex"
+uid="uid://byvh24428jhls"
+path="res://.godot/imported/icon_combate.png-22cc60fe3efe89c4569e6e60525b2aa2.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://valtair/map/art/icon_miniboss.png"
-dest_files=["res://.godot/imported/icon_miniboss.png-fe8eab73ce45b757266352bf78428b71.ctex"]
+source_file="res://map/art/icon_combate.png"
+dest_files=["res://.godot/imported/icon_combate.png-22cc60fe3efe89c4569e6e60525b2aa2.ctex"]
 
 [params]
 

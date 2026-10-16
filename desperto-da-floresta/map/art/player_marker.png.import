@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bsqaj60jxtwtq"
-path="res://.godot/imported/icon_descanso.png-e33a8a201305edebe0f69a2e85561a10.ctex"
+uid="uid://dwijeua8sbq47"
+path="res://.godot/imported/player_marker.png-a67905b9d936daa4628252311ec53384.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://valtair/map/art/icon_descanso.png"
-dest_files=["res://.godot/imported/icon_descanso.png-e33a8a201305edebe0f69a2e85561a10.ctex"]
+source_file="res://map/art/player_marker.png"
+dest_files=["res://.godot/imported/player_marker.png-a67905b9d936daa4628252311ec53384.ctex"]
 
 [params]
 

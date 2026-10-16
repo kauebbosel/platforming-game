@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://5cqox2lvubf7"
-path="res://.godot/imported/background.png-ae3ba412259cf265230607d1e1ec739f.ctex"
+uid="uid://blpivhkopiovu"
+path="res://.godot/imported/icon_mercadora.png-1446a42487e8963ce913993ae2a7efde.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://valtair/map/art/background.png"
-dest_files=["res://.godot/imported/background.png-ae3ba412259cf265230607d1e1ec739f.ctex"]
+source_file="res://map/art/icon_mercadora.png"
+dest_files=["res://.godot/imported/icon_mercadora.png-1446a42487e8963ce913993ae2a7efde.ctex"]
 
 [params]
 

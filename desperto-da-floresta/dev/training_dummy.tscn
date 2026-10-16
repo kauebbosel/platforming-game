@@ -1,0 +1,27 @@
+[gd_scene format=3 uid="uid://dc3cg0r1sq183"]
+
+[ext_resource type="Script" uid="uid://cmrc3qih8meqg" path="res://dev/training_dummy.gd" id="1_8eh5k"]
+[ext_resource type="Texture2D" uid="uid://d0hgk1effho6a" path="res://entities/enemies/mushroom_guy/mushroom_creature.png" id="2_8eh5k"]
+[ext_resource type="Script" uid="uid://b4101c84uef8o" path="res://components/health_component.gd" id="3_r3xm1"]
+[ext_resource type="Script" uid="uid://cejkgwdmbli8w" path="res://components/hurtbox.gd" id="4_m2jw4"]
+
+[sub_resource type="RectangleShape2D" id="shape"]
+size = Vector2(16, 30)
+
+[node name="TrainingDummy" type="Node2D" unique_id=1098304201]
+script = ExtResource("1_8eh5k")
+
+[node name="Shape" type="Sprite2D" parent="." unique_id=1363608297]
+texture = ExtResource("2_8eh5k")
+offset = Vector2(0, -15)
+
+[node name="Health" type="Node" parent="." unique_id=1183010247]
+script = ExtResource("3_r3xm1")
+max_health = 3
+
+[node name="Hurtbox" type="Area2D" parent="." unique_id=1713469961]
+position = Vector2(0, -14)
+script = ExtResource("4_m2jw4")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox" unique_id=471698552]
+shape = SubResource("shape")
