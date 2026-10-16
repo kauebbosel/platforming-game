@@ -1,1 +1,1 @@
-Repositório para disciplina de Jogos Digitais na Universidade Federal de Pelotas. Desenvolvido por Amy Hammes, Marcos Lima e Kauê Bosel.
+Repositório para disciplina de Jogos Digitais na Universidade Federal de Pelotas. Desenvolvido por Amy Hammes, Marcos Lima e Kauê Bosel. Versão Godot 4.7.
