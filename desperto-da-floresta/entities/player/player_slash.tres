@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="AttackData" format=3 uid="uid://drrkytlhc3px2"]
+
+[ext_resource type="Script" uid="uid://cqpda0j2kknbk" path="res://data/attack_data.gd" id="1_ib388"]
+
+[resource]
+script = ExtResource("1_ib388")
+active_frames = 6
+recovery_frames = 10
+metadata/_custom_type_script = "uid://cqpda0j2kknbk"

@@ -1,14 +1,19 @@
 [gd_scene format=3 uid="uid://cl1nmi42voduh"]
 
 [ext_resource type="Script" uid="uid://b44md5dh3o6j5" path="res://entities/player/player.gd" id="1_26q78"]
-[ext_resource type="Script" uid="uid://do1kggn8mlhwq" path="res://components/movement_component.gd" id="2_bectd"]
 [ext_resource type="Script" uid="uid://b2ef0w7517ktb" path="res://entities/player/player_stats.gd" id="2_wvtmh"]
-[ext_resource type="Script" uid="uid://b4drnjsv52cbs" path="res://components/jump_component.gd" id="3_wvtmh"]
 [ext_resource type="Script" uid="uid://b4101c84uef8o" path="res://components/health_component.gd" id="4_7thud"]
 [ext_resource type="Script" uid="uid://bck7j34xyv288" path="res://components/attack_component.gd" id="5_a1qjk"]
 [ext_resource type="Script" uid="uid://bprjvu4g3lmvd" path="res://components/hitbox.gd" id="6_j3ovn"]
 [ext_resource type="Texture2D" uid="uid://drutiotplsne0" path="res://entities/player/slash_fx.png" id="7_afbqv"]
+[ext_resource type="Resource" uid="uid://drrkytlhc3px2" path="res://entities/player/player_slash.tres" id="7_wvtmh"]
 [ext_resource type="Script" uid="uid://cejkgwdmbli8w" path="res://components/hurtbox.gd" id="8_gx6sm"]
+[ext_resource type="Script" uid="uid://q03686l0lng5" path="res://entities/player/state_machine.gd" id="9_afbqv"]
+[ext_resource type="Script" uid="uid://6x7alhehjyvc" path="res://entities/player/states/run.gd" id="10_gx6sm"]
+[ext_resource type="Script" uid="uid://52hy6amntniy" path="res://entities/player/states/jump.gd" id="11_yqrof"]
+[ext_resource type="Script" uid="uid://7boa2xiymvqj" path="res://entities/player/states/idle.gd" id="12_3wlsy"]
+[ext_resource type="Script" uid="uid://d3rvgi43trrh1" path="res://entities/player/states/fall.gd" id="13_b2kln"]
+[ext_resource type="Script" uid="uid://blgr677nrobt6" path="res://entities/player/states/attack.gd" id="14_we0b7"]
 
 [sub_resource type="Resource" id="Resource_itxoo"]
 script = ExtResource("2_wvtmh")
@@ -40,27 +45,23 @@ shape = SubResource("body_shape")
 texture = SubResource("CompressedTexture2D_l48rg")
 offset = Vector2(0, -16)
 
-[node name="Movement" type="Node" parent="." unique_id=858207675]
-script = ExtResource("2_bectd")
-
-[node name="Jump" type="Node" parent="." unique_id=418833641]
-script = ExtResource("3_wvtmh")
-
 [node name="Health" type="Node" parent="." unique_id=286975665]
 script = ExtResource("4_7thud")
 
-[node name="Attack" type="Node2D" parent="." unique_id=389030333]
+[node name="AttackComponent" type="Node2D" parent="." unique_id=389030333 node_paths=PackedStringArray("vfx")]
 script = ExtResource("5_a1qjk")
+attack_data = ExtResource("7_wvtmh")
+vfx = NodePath("SlashFX")
 
-[node name="Hitbox" type="Area2D" parent="Attack" unique_id=2135191965]
+[node name="Hitbox" type="Area2D" parent="AttackComponent" unique_id=2135191965]
 position = Vector2(22, -16)
 scale = Vector2(0.5, 0.5)
 script = ExtResource("6_j3ovn")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Attack/Hitbox" unique_id=998711320]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="AttackComponent/Hitbox" unique_id=998711320]
 shape = SubResource("hit_shape")
 
-[node name="SlashFX" type="Sprite2D" parent="Attack" unique_id=734150383]
+[node name="SlashFX" type="Sprite2D" parent="AttackComponent" unique_id=734150383]
 position = Vector2(22, -16)
 scale = Vector2(0.5, 0.5)
 texture = ExtResource("7_afbqv")
@@ -72,3 +73,23 @@ team = &"player"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox" unique_id=426946419]
 shape = SubResource("hurt_shape")
+
+[node name="StateMachine" type="Node" parent="." unique_id=179379325 node_paths=PackedStringArray("initial_state")]
+script = ExtResource("9_afbqv")
+initial_state = NodePath("Idle")
+metadata/_custom_type_script = "uid://q03686l0lng5"
+
+[node name="Run" type="Node" parent="StateMachine" unique_id=816684368]
+script = ExtResource("10_gx6sm")
+
+[node name="Jump" type="Node" parent="StateMachine" unique_id=628285147]
+script = ExtResource("11_yqrof")
+
+[node name="Idle" type="Node" parent="StateMachine" unique_id=703603256]
+script = ExtResource("12_3wlsy")
+
+[node name="Fall" type="Node" parent="StateMachine" unique_id=739126503]
+script = ExtResource("13_b2kln")
+
+[node name="Attack" type="Node" parent="StateMachine" unique_id=1749506378]
+script = ExtResource("14_we0b7")

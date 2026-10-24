@@ -19,3 +19,5 @@ extends Resource
 
 @export_group("Atributos de Combate")
 @export var max_health: int = 5
+
+@export var fall_gravity_multiplier: float = 1.0
