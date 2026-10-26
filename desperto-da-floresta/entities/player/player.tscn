@@ -14,6 +14,10 @@
 [ext_resource type="Script" uid="uid://7boa2xiymvqj" path="res://entities/player/states/idle.gd" id="12_3wlsy"]
 [ext_resource type="Script" uid="uid://d3rvgi43trrh1" path="res://entities/player/states/fall.gd" id="13_b2kln"]
 [ext_resource type="Script" uid="uid://blgr677nrobt6" path="res://entities/player/states/attack.gd" id="14_we0b7"]
+[ext_resource type="Script" uid="uid://12fqn42eukj0" path="res://components/ammo_component.gd" id="15_3wlsy"]
+[ext_resource type="Script" uid="uid://ch2ofmejjk7ff" path="res://components/ranged_attack_component.gd" id="16_b2kln"]
+[ext_resource type="PackedScene" path="res://entities/projectile/projectile.tscn" id="17_b2kln"]
+[ext_resource type="Resource" uid="uid://cqmb8f2dmjcg3" path="res://entities/projectile/stone.tres" id="17_we0b7"]
 
 [sub_resource type="Resource" id="Resource_itxoo"]
 script = ExtResource("2_wvtmh")
@@ -93,3 +97,12 @@ script = ExtResource("13_b2kln")
 
 [node name="Attack" type="Node" parent="StateMachine" unique_id=1749506378]
 script = ExtResource("14_we0b7")
+
+[node name="AmmoComponent" type="Node" parent="." unique_id=1871776644]
+script = ExtResource("15_3wlsy")
+
+[node name="RangedAttackComponent" type="Node" parent="." unique_id=43613829 node_paths=PackedStringArray("ammo")]
+script = ExtResource("16_b2kln")
+projectile_scene = ExtResource("17_b2kln")
+projectile_data = ExtResource("17_we0b7")
+ammo = NodePath("../AmmoComponent")

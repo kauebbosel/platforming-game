@@ -10,6 +10,9 @@ extends CharacterBody2D
 ## Nó filho direto do Player, com um filho Hitbox chamado "Hitbox".
 @onready var attack: AttackComponent = $AttackComponent
 
+@onready var ammo: AmmoComponent = $AmmoComponent
+@onready var ranged: RangedAttackComponent = $RangedAttackComponent
+
 var facing: int = 1  # 1 = direita, -1 = esquerda
 var coyote_timer: float = 0.0
 var jump_buffer_timer: float = 0.0
@@ -21,6 +24,7 @@ var _was_on_floor: bool = false
 func _ready() -> void:
 	assert(stats != null, "ERRO: O recurso PlayerStats.tres precisa ser atribuído no Inspetor do Player!")
 	state_machine.init(self)
+	ammo.changed.connect(func(c: int, m: int) -> void: print("Pedras: %d/%d" % [c, m]))
 
 
 func _physics_process(delta: float) -> void:
@@ -33,7 +37,9 @@ func _physics_process(delta: float) -> void:
 
 	if coyote_timer > 0.0:
 		coyote_timer -= delta
-
+		
+	if Input.is_action_just_pressed("ranged_attack") and not attack.is_attacking():
+		ranged.try_fire(facing)
 
 func apply_gravity(delta: float) -> void:
 	if is_on_floor():
