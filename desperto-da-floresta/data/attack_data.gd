@@ -17,6 +17,11 @@ enum DamageType { PHYSICAL, FIRE }
 @export var startup_frames: int = 4
 @export var active_frames: int = 4
 @export var recovery_frames: int = 8
+@export_group("Movimento durante o golpe")
+## Velocidade horizontal no chão (0 = o Valtair para; 1 = anda normalmente).
+@export_range(0.0, 1.0) var ground_move_multiplier: float = 0.0
+## No ar (1 = controle normal, como em Fall; 0 = congela o horizontal).
+@export_range(0.0, 1.0) var air_move_multiplier: float = 1.0
 @export_group("Visual")
 @export var vfx: SpriteFrames
 

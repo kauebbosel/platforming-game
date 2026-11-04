@@ -7,9 +7,9 @@ extends CharacterBody2D
 
 @onready var state_machine: StateMachine = $StateMachine
 @onready var sprite: Sprite2D = $Visual/Sprite2D
-## Nó filho direto do Player, com um filho Hitbox chamado "Hitbox".
+## Nós filhos diretos do Player (os nomes precisam ser exatamente estes).
 @onready var attack: AttackComponent = $AttackComponent
-
+@onready var health: HealthComponent = $Health
 @onready var ammo: AmmoComponent = $AmmoComponent
 @onready var ranged: RangedAttackComponent = $RangedAttackComponent
 
@@ -17,6 +17,8 @@ var facing: int = 1  # 1 = direita, -1 = esquerda
 var coyote_timer: float = 0.0
 var jump_buffer_timer: float = 0.0
 var jump_buffered: bool = false
+## Verdadeiro enquanto o corte de pulo ainda pode acontecer (subindo por causa de um pulo).
+var jump_cut_available: bool = false
 
 var _was_on_floor: bool = false
 
@@ -24,7 +26,7 @@ var _was_on_floor: bool = false
 func _ready() -> void:
 	assert(stats != null, "ERRO: O recurso PlayerStats.tres precisa ser atribuído no Inspetor do Player!")
 	state_machine.init(self)
-	ammo.changed.connect(func(c: int, m: int) -> void: print("Pedras: %d/%d" % [c, m]))
+	_connect_hud_events()
 
 
 func _physics_process(delta: float) -> void:
@@ -37,9 +39,11 @@ func _physics_process(delta: float) -> void:
 
 	if coyote_timer > 0.0:
 		coyote_timer -= delta
-		
+
+	# Ataque ranged: ação paralela, não trava o movimento. Bloqueado durante o golpe corpo a corpo.
 	if Input.is_action_just_pressed("ranged_attack") and not attack.is_attacking():
 		ranged.try_fire(facing)
+
 
 func apply_gravity(delta: float) -> void:
 	if is_on_floor():
@@ -52,6 +56,15 @@ func apply_gravity(delta: float) -> void:
 
 func can_jump() -> bool:
 	return is_on_floor() or coyote_timer > 0.0
+
+
+## Dá o impulso do pulo. Usado pelo estado Jump e pelo Attack (pular durante o golpe
+## não cancela o golpe), para o pulo ter uma implementação só.
+func start_jump() -> void:
+	velocity.y = stats.jump_velocity
+	jump_buffered = false
+	coyote_timer = 0.0
+	jump_cut_available = true
 
 
 func start_coyote_timer() -> void:
@@ -68,6 +81,18 @@ func handle_jump_buffer(delta: float) -> void:
 			jump_buffered = false
 
 
+## Altura variável do pulo. Chame em TODO estado em que o Valtair pode estar subindo
+## (Jump, Attack, Fall), para soltar o botão cortar a subida mesmo atacando no ar.
+func apply_jump_cut() -> void:
+	if not jump_cut_available:
+		return
+	if velocity.y >= 0.0:
+		jump_cut_available = false  # passou do ápice: não há mais o que cortar
+	elif not Input.is_action_pressed("jump"):
+		velocity.y *= stats.jump_cut_multiplier
+		jump_cut_available = false
+
+
 func update_facing_direction(input_x: float) -> void:
 	if input_x == 0.0:
 		return
@@ -77,3 +102,29 @@ func update_facing_direction(input_x: float) -> void:
 	facing = new_facing
 	sprite.flip_h = facing < 0
 	attack.set_facing(facing)  # a hitbox acompanha o lado para onde o Valtair olha
+
+
+## O Player é a ponte entre os seus componentes e o HUD: repassa os sinais ao EventBus.
+## Os componentes são genéricos (servem também a inimigos), então não falam com o HUD.
+func _connect_hud_events() -> void:
+	health.changed.connect(EventBus.player_health_changed.emit)
+	ammo.changed.connect(EventBus.player_ammo_changed.emit)
+	health.died.connect(EventBus.player_died.emit)
+	# Valores iniciais, depois que todos os nós (inclusive o HUD) terminarem o _ready.
+	_emit_hud_state.call_deferred()
+
+
+func _emit_hud_state() -> void:
+	EventBus.player_health_changed.emit(health.health, health.max_health)
+	EventBus.player_ammo_changed.emit(ammo.current, ammo.max_ammo)
+
+
+# TEMPORÁRIO: testa o HUD sem inimigos. Apague quando o Corpo-Seco existir.
+func _unhandled_key_input(event: InputEvent) -> void:
+	var key: InputEventKey = event as InputEventKey
+	if key == null or not key.pressed or key.echo:
+		return
+	match key.keycode:
+		KEY_F1: health.take_damage(10)
+		KEY_F2: health.heal(10)
+		KEY_F3: ammo.refill()
