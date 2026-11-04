@@ -21,3 +21,12 @@ extends Resource
 @export var max_health: int = 5
 
 @export var fall_gravity_multiplier: float = 1.0
+
+@export_group("Dash")
+@export var dash_distance: float = 96.0
+@export var dash_duration: float = 0.20
+## Conta desde o início do dash (inclui a duração dele).
+@export var dash_cooldown: float = 0.6
+@export var max_air_dashes: int = 1
+## 0 = dash reto, sem cair durante ele.
+@export var dash_gravity_multiplier: float = 0.0

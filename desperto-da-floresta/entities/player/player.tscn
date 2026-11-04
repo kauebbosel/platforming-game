@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://cl1nmi42voduh"]
 
-[ext_resource type="Script" path="res://entities/player/player.gd" id="1_26q78"]
+[ext_resource type="Script" uid="uid://7b5s5e14yghi" path="res://entities/player/player.gd" id="1_26q78"]
 [ext_resource type="Script" uid="uid://b2ef0w7517ktb" path="res://entities/player/player_stats.gd" id="2_wvtmh"]
 [ext_resource type="Script" uid="uid://b4101c84uef8o" path="res://components/health_component.gd" id="4_7thud"]
 [ext_resource type="Script" uid="uid://bck7j34xyv288" path="res://components/attack_component.gd" id="5_a1qjk"]
@@ -10,11 +10,12 @@
 [ext_resource type="Script" uid="uid://cejkgwdmbli8w" path="res://components/hurtbox.gd" id="8_gx6sm"]
 [ext_resource type="Script" uid="uid://q03686l0lng5" path="res://entities/player/state_machine.gd" id="9_afbqv"]
 [ext_resource type="Script" uid="uid://6x7alhehjyvc" path="res://entities/player/states/run.gd" id="10_gx6sm"]
-[ext_resource type="Script" path="res://entities/player/states/jump.gd" id="11_yqrof"]
+[ext_resource type="Script" uid="uid://b3l7himv71fx2" path="res://entities/player/states/jump.gd" id="11_yqrof"]
 [ext_resource type="Script" uid="uid://7boa2xiymvqj" path="res://entities/player/states/idle.gd" id="12_3wlsy"]
-[ext_resource type="Script" path="res://entities/player/states/fall.gd" id="13_b2kln"]
-[ext_resource type="Script" path="res://entities/player/states/attack.gd" id="14_we0b7"]
+[ext_resource type="Script" uid="uid://c6h3ould4bxja" path="res://entities/player/states/fall.gd" id="13_b2kln"]
+[ext_resource type="Script" uid="uid://3yvx5fyda6ov" path="res://entities/player/states/attack.gd" id="14_we0b7"]
 [ext_resource type="Script" uid="uid://12fqn42eukj0" path="res://components/ammo_component.gd" id="15_3wlsy"]
+[ext_resource type="Script" uid="uid://c2ym3jvflxymj" path="res://entities/player/states/dash.gd" id="15_we0b7"]
 [ext_resource type="Script" uid="uid://ch2ofmejjk7ff" path="res://components/ranged_attack_component.gd" id="16_b2kln"]
 [ext_resource type="PackedScene" path="res://entities/projectile/projectile.tscn" id="17_b2kln"]
 [ext_resource type="Resource" uid="uid://cqmb8f2dmjcg3" path="res://entities/projectile/stone.tres" id="17_we0b7"]
@@ -97,6 +98,9 @@ script = ExtResource("13_b2kln")
 
 [node name="Attack" type="Node" parent="StateMachine" unique_id=1749506378]
 script = ExtResource("14_we0b7")
+
+[node name="Dash" type="Node" parent="StateMachine" unique_id=1061338682]
+script = ExtResource("15_we0b7")
 
 [node name="AmmoComponent" type="Node" parent="." unique_id=1871776644]
 script = ExtResource("15_3wlsy")

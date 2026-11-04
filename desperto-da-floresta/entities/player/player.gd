@@ -19,6 +19,10 @@ var jump_buffer_timer: float = 0.0
 var jump_buffered: bool = false
 ## Verdadeiro enquanto o corte de pulo ainda pode acontecer (subindo por causa de um pulo).
 var jump_cut_available: bool = false
+## Tempo restante até poder usar o dash de novo (conta desde o início do dash).
+var dash_cooldown_left: float = 0.0
+## Dashes no ar ainda disponíveis; recarrega ao tocar o chão.
+var air_dashes_left: int = 0
 
 var _was_on_floor: bool = false
 
@@ -40,6 +44,16 @@ func _physics_process(delta: float) -> void:
 	if coyote_timer > 0.0:
 		coyote_timer -= delta
 
+	if on_floor:
+		air_dashes_left = stats.max_air_dashes
+	if dash_cooldown_left > 0.0:
+		dash_cooldown_left -= delta
+
+	# Dash: transição global, vale em qualquer estado (inclusive durante o golpe, que é cancelado).
+	# Roda antes dos estados, então a troca já vale neste mesmo frame.
+	if Input.is_action_just_pressed("dodge") and can_dash():
+		state_machine.transition_to("dash")
+
 	# Ataque ranged: ação paralela, não trava o movimento. Bloqueado durante o golpe corpo a corpo.
 	if Input.is_action_just_pressed("ranged_attack") and not attack.is_attacking():
 		ranged.try_fire(facing)
@@ -56,6 +70,10 @@ func apply_gravity(delta: float) -> void:
 
 func can_jump() -> bool:
 	return is_on_floor() or coyote_timer > 0.0
+
+
+func can_dash() -> bool:
+	return dash_cooldown_left <= 0.0 and (is_on_floor() or air_dashes_left > 0)
 
 
 ## Dá o impulso do pulo. Usado pelo estado Jump e pelo Attack (pular durante o golpe
