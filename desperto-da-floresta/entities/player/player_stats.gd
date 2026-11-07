@@ -17,9 +17,6 @@ extends Resource
 @export var coyote_time: float = 0.10
 @export var jump_buffer: float = 0.10
 
-@export_group("Atributos de Combate")
-@export var max_health: int = 5
-
 @export var fall_gravity_multiplier: float = 1.0
 
 @export_group("Dash")

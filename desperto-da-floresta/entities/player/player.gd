@@ -12,6 +12,7 @@ extends CharacterBody2D
 @onready var health: HealthComponent = $Health
 @onready var ammo: AmmoComponent = $AmmoComponent
 @onready var ranged: RangedAttackComponent = $RangedAttackComponent
+@onready var hurtbox: Hurtbox = $Hurtbox
 
 var facing: int = 1  # 1 = direita, -1 = esquerda
 var coyote_timer: float = 0.0
@@ -143,6 +144,6 @@ func _unhandled_key_input(event: InputEvent) -> void:
 	if key == null or not key.pressed or key.echo:
 		return
 	match key.keycode:
-		KEY_F1: health.take_damage(10)
+		KEY_F1: hurtbox.receive_hit(10, self, Vector2.ZERO)
 		KEY_F2: health.heal(10)
 		KEY_F3: ammo.refill()

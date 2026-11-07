@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://cl1nmi42voduh"]
 
 [ext_resource type="Script" uid="uid://7b5s5e14yghi" path="res://entities/player/player.gd" id="1_26q78"]
-[ext_resource type="Script" uid="uid://b2ef0w7517ktb" path="res://entities/player/player_stats.gd" id="2_wvtmh"]
+[ext_resource type="Resource" uid="uid://723psfxn3m3e" path="res://entities/player/player_stats.tres" id="2_we0b7"]
 [ext_resource type="Script" uid="uid://b4101c84uef8o" path="res://components/health_component.gd" id="4_7thud"]
 [ext_resource type="Script" uid="uid://bck7j34xyv288" path="res://components/attack_component.gd" id="5_a1qjk"]
 [ext_resource type="Script" uid="uid://bprjvu4g3lmvd" path="res://components/hitbox.gd" id="6_j3ovn"]
@@ -19,10 +19,7 @@
 [ext_resource type="Script" uid="uid://ch2ofmejjk7ff" path="res://components/ranged_attack_component.gd" id="16_b2kln"]
 [ext_resource type="PackedScene" path="res://entities/projectile/projectile.tscn" id="17_b2kln"]
 [ext_resource type="Resource" uid="uid://cqmb8f2dmjcg3" path="res://entities/projectile/stone.tres" id="17_we0b7"]
-
-[sub_resource type="Resource" id="Resource_itxoo"]
-script = ExtResource("2_wvtmh")
-metadata/_custom_type_script = "uid://b2ef0w7517ktb"
+[ext_resource type="Script" uid="uid://h6kfjy1lu01h" path="res://components/blink_component.gd" id="20_mtric"]
 
 [sub_resource type="RectangleShape2D" id="body_shape"]
 size = Vector2(14, 28)
@@ -37,8 +34,9 @@ size = Vector2(26, 24)
 size = Vector2(14, 28)
 
 [node name="Player" type="CharacterBody2D" unique_id=1274089227]
+collision_layer = 2
 script = ExtResource("1_26q78")
-stats = SubResource("Resource_itxoo")
+stats = ExtResource("2_we0b7")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1435026753]
 position = Vector2(0, -14)
@@ -52,6 +50,7 @@ offset = Vector2(0, -16)
 
 [node name="Health" type="Node" parent="." unique_id=286975665]
 script = ExtResource("4_7thud")
+max_health = 100
 
 [node name="AttackComponent" type="Node2D" parent="." unique_id=389030333 node_paths=PackedStringArray("vfx")]
 script = ExtResource("5_a1qjk")
@@ -75,6 +74,7 @@ texture = ExtResource("7_afbqv")
 position = Vector2(0, -14)
 script = ExtResource("8_gx6sm")
 team = &"player"
+invulnerability_time = 0.6
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox" unique_id=426946419]
 shape = SubResource("hurt_shape")
@@ -110,3 +110,8 @@ script = ExtResource("16_b2kln")
 projectile_scene = ExtResource("17_b2kln")
 projectile_data = ExtResource("17_we0b7")
 ammo = NodePath("../AmmoComponent")
+
+[node name="BlinkComponent" type="Node" parent="." unique_id=1309788534 node_paths=PackedStringArray("hurtbox", "target")]
+script = ExtResource("20_mtric")
+hurtbox = NodePath("../Hurtbox")
+target = NodePath("../Visual")
