@@ -1,13 +1,25 @@
 [gd_scene format=3 uid="uid://cl1nmi42voduh"]
 
-[ext_resource type="Script" uid="uid://b44md5dh3o6j5" path="res://entities/player/player.gd" id="1_26q78"]
-[ext_resource type="Script" uid="uid://do1kggn8mlhwq" path="res://components/movement_component.gd" id="2_bectd"]
-[ext_resource type="Script" uid="uid://b4drnjsv52cbs" path="res://components/jump_component.gd" id="3_wvtmh"]
+[ext_resource type="Script" uid="uid://7b5s5e14yghi" path="res://entities/player/player.gd" id="1_26q78"]
+[ext_resource type="Resource" uid="uid://723psfxn3m3e" path="res://entities/player/player_stats.tres" id="2_we0b7"]
 [ext_resource type="Script" uid="uid://b4101c84uef8o" path="res://components/health_component.gd" id="4_7thud"]
 [ext_resource type="Script" uid="uid://bck7j34xyv288" path="res://components/attack_component.gd" id="5_a1qjk"]
 [ext_resource type="Script" uid="uid://bprjvu4g3lmvd" path="res://components/hitbox.gd" id="6_j3ovn"]
 [ext_resource type="Texture2D" uid="uid://drutiotplsne0" path="res://entities/player/slash_fx.png" id="7_afbqv"]
+[ext_resource type="Resource" uid="uid://drrkytlhc3px2" path="res://entities/player/player_slash.tres" id="7_wvtmh"]
 [ext_resource type="Script" uid="uid://cejkgwdmbli8w" path="res://components/hurtbox.gd" id="8_gx6sm"]
+[ext_resource type="Script" uid="uid://q03686l0lng5" path="res://entities/player/state_machine.gd" id="9_afbqv"]
+[ext_resource type="Script" uid="uid://6x7alhehjyvc" path="res://entities/player/states/run.gd" id="10_gx6sm"]
+[ext_resource type="Script" uid="uid://b3l7himv71fx2" path="res://entities/player/states/jump.gd" id="11_yqrof"]
+[ext_resource type="Script" uid="uid://7boa2xiymvqj" path="res://entities/player/states/idle.gd" id="12_3wlsy"]
+[ext_resource type="Script" uid="uid://c6h3ould4bxja" path="res://entities/player/states/fall.gd" id="13_b2kln"]
+[ext_resource type="Script" uid="uid://3yvx5fyda6ov" path="res://entities/player/states/attack.gd" id="14_we0b7"]
+[ext_resource type="Script" uid="uid://12fqn42eukj0" path="res://components/ammo_component.gd" id="15_3wlsy"]
+[ext_resource type="Script" uid="uid://c2ym3jvflxymj" path="res://entities/player/states/dash.gd" id="15_we0b7"]
+[ext_resource type="Script" uid="uid://ch2ofmejjk7ff" path="res://components/ranged_attack_component.gd" id="16_b2kln"]
+[ext_resource type="PackedScene" path="res://entities/projectile/projectile.tscn" id="17_b2kln"]
+[ext_resource type="Resource" uid="uid://cqmb8f2dmjcg3" path="res://entities/projectile/stone.tres" id="17_we0b7"]
+[ext_resource type="Script" uid="uid://h6kfjy1lu01h" path="res://components/blink_component.gd" id="20_mtric"]
 
 [sub_resource type="RectangleShape2D" id="body_shape"]
 size = Vector2(14, 28)
@@ -22,7 +34,9 @@ size = Vector2(26, 24)
 size = Vector2(14, 28)
 
 [node name="Player" type="CharacterBody2D" unique_id=1274089227]
+collision_layer = 2
 script = ExtResource("1_26q78")
+stats = ExtResource("2_we0b7")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1435026753]
 position = Vector2(0, -14)
@@ -34,27 +48,24 @@ shape = SubResource("body_shape")
 texture = SubResource("CompressedTexture2D_l48rg")
 offset = Vector2(0, -16)
 
-[node name="Movement" type="Node" parent="." unique_id=858207675]
-script = ExtResource("2_bectd")
-
-[node name="Jump" type="Node" parent="." unique_id=418833641]
-script = ExtResource("3_wvtmh")
-
 [node name="Health" type="Node" parent="." unique_id=286975665]
 script = ExtResource("4_7thud")
+max_health = 100
 
-[node name="Attack" type="Node2D" parent="." unique_id=389030333]
+[node name="AttackComponent" type="Node2D" parent="." unique_id=389030333 node_paths=PackedStringArray("vfx")]
 script = ExtResource("5_a1qjk")
+attack_data = ExtResource("7_wvtmh")
+vfx = NodePath("SlashFX")
 
-[node name="Hitbox" type="Area2D" parent="Attack" unique_id=2135191965]
+[node name="Hitbox" type="Area2D" parent="AttackComponent" unique_id=2135191965]
 position = Vector2(22, -16)
 scale = Vector2(0.5, 0.5)
 script = ExtResource("6_j3ovn")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Attack/Hitbox" unique_id=998711320]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="AttackComponent/Hitbox" unique_id=998711320]
 shape = SubResource("hit_shape")
 
-[node name="SlashFX" type="Sprite2D" parent="Attack" unique_id=734150383]
+[node name="SlashFX" type="Sprite2D" parent="AttackComponent" unique_id=734150383]
 position = Vector2(22, -16)
 scale = Vector2(0.5, 0.5)
 texture = ExtResource("7_afbqv")
@@ -63,6 +74,44 @@ texture = ExtResource("7_afbqv")
 position = Vector2(0, -14)
 script = ExtResource("8_gx6sm")
 team = &"player"
+invulnerability_time = 0.6
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox" unique_id=426946419]
 shape = SubResource("hurt_shape")
+
+[node name="StateMachine" type="Node" parent="." unique_id=179379325 node_paths=PackedStringArray("initial_state")]
+script = ExtResource("9_afbqv")
+initial_state = NodePath("Idle")
+metadata/_custom_type_script = "uid://q03686l0lng5"
+
+[node name="Run" type="Node" parent="StateMachine" unique_id=816684368]
+script = ExtResource("10_gx6sm")
+
+[node name="Jump" type="Node" parent="StateMachine" unique_id=628285147]
+script = ExtResource("11_yqrof")
+
+[node name="Idle" type="Node" parent="StateMachine" unique_id=703603256]
+script = ExtResource("12_3wlsy")
+
+[node name="Fall" type="Node" parent="StateMachine" unique_id=739126503]
+script = ExtResource("13_b2kln")
+
+[node name="Attack" type="Node" parent="StateMachine" unique_id=1749506378]
+script = ExtResource("14_we0b7")
+
+[node name="Dash" type="Node" parent="StateMachine" unique_id=1061338682]
+script = ExtResource("15_we0b7")
+
+[node name="AmmoComponent" type="Node" parent="." unique_id=1871776644]
+script = ExtResource("15_3wlsy")
+
+[node name="RangedAttackComponent" type="Node" parent="." unique_id=43613829 node_paths=PackedStringArray("ammo")]
+script = ExtResource("16_b2kln")
+projectile_scene = ExtResource("17_b2kln")
+projectile_data = ExtResource("17_we0b7")
+ammo = NodePath("../AmmoComponent")
+
+[node name="BlinkComponent" type="Node" parent="." unique_id=1309788534 node_paths=PackedStringArray("hurtbox", "target")]
+script = ExtResource("20_mtric")
+hurtbox = NodePath("../Hurtbox")
+target = NodePath("../Visual")

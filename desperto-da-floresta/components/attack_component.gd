@@ -1,6 +1,9 @@
+# components/attack_component.gd
 class_name AttackComponent
 extends Node2D
 ## Ataque melee em 3 fases: STARTUP (preparação) -> ACTIVE (hitbox ligada) -> RECOVERY (recuperação).
+## Quem decide QUANDO atacar é o dono (ex.: o estado Attack do Player), chamando start().
+## Este componente só executa as fases, lendo tempos e dano do AttackData.
 ## É um Node2D (e não Node) para o Hitbox filho herdar posição/flip do Valtair.
 ## O pai precisa ser um CharacterBody2D e deve existir um filho Hitbox chamado "Hitbox".
 ##
@@ -15,54 +18,48 @@ signal hit_landed(hurtbox: Hurtbox)
 
 enum State { IDLE, STARTUP, ACTIVE, RECOVERY }
 
+@export var attack_data: AttackData
 @export var timer_driven: bool = true
-@export var startup: float = 0.06
-@export var active: float = 0.10
-@export var recovery: float = 0.16
-@export var damage: int = 1
-## Velocidade horizontal durante o ataque (0 = para totalmente, 1 = normal).
-@export_range(0.0, 1.0) var move_multiplier: float = 0.3
-## Tempo em que um clique antecipado ainda vale (encadeia ataques sem "engolir" botão).
-@export var buffer_time: float = 0.12
+## Efeito visual do golpe (ex.: o nó SlashFX). Fica escondido e só aparece na fase ACTIVE.
+@export var vfx: CanvasItem
 
 @onready var body: CharacterBody2D = get_parent() as CharacterBody2D
 @onready var hitbox: Hitbox = $Hitbox as Hitbox
 
 var state: State = State.IDLE
 var _timer: float = 0.0
-var _buffer: float = 0.0
 
 
 func _ready() -> void:
+	assert(attack_data != null, "AttackComponent precisa de um AttackData atribuído no Inspetor!")
 	hitbox.source = body
-	hitbox.damage = damage
+	hitbox.damage = attack_data.damage
 	hitbox.hit_landed.connect(func(h: Hurtbox) -> void: hit_landed.emit(h))
+	_set_vfx_visible(false)
 
 
 func is_attacking() -> bool:
 	return state != State.IDLE
 
 
-## Multiplicador de velocidade para o MovementComponent.
-func movement_multiplier() -> float:
-	return move_multiplier if is_attacking() else 1.0
-
-
 func set_facing(facing: int) -> void:
 	scale.x = float(facing)
 
 
-func update(delta: float) -> void:
-	_buffer = maxf(_buffer - delta, 0.0)
-	if Input.is_action_just_pressed(&"attack"):
-		_buffer = maxf(buffer_time, delta)
-
-	if state == State.IDLE:
-		if _buffer > 0.0:
-			_begin()
+## Inicia o golpe. Ignorado se já estiver atacando.
+func start() -> void:
+	if state != State.IDLE:
 		return
+	state = State.STARTUP
+	_timer = attack_data.startup_time()
+	attack_started.emit()
+	if timer_driven and attack_data.startup_frames <= 0:
+		enter_active()
 
-	if not timer_driven:
+
+## Deve ser chamado a cada frame de física por quem é dono do ataque.
+func update(delta: float) -> void:
+	if state == State.IDLE or not timer_driven:
 		return
 	_timer -= delta
 	if _timer > 0.0:
@@ -73,32 +70,38 @@ func update(delta: float) -> void:
 		State.RECOVERY: finish()
 
 
-func _begin() -> void:
-	_buffer = 0.0
-	state = State.STARTUP
-	_timer = startup
-	attack_started.emit()
-	if timer_driven and startup <= 0.0:
-		enter_active()
+## Interrompe o golpe (ex.: o dono saiu do estado). Seguro de chamar em qualquer momento.
+func cancel() -> void:
+	if state == State.IDLE:
+		return
+	finish()
 
 
 ## --- Públicos: o AnimationPlayer pode chamar estes três ---
 func enter_active() -> void:
 	state = State.ACTIVE
-	_timer = active
-	hitbox.damage = damage
+	_timer = attack_data.active_time()
+	hitbox.damage = attack_data.damage
 	hitbox.activate()
+	_set_vfx_visible(true)
 	active_started.emit()
 
 
 func enter_recovery() -> void:
 	state = State.RECOVERY
-	_timer = recovery
+	_timer = attack_data.recovery_time()
 	hitbox.deactivate()
+	_set_vfx_visible(false)
 	active_ended.emit()
 
 
 func finish() -> void:
 	state = State.IDLE
 	hitbox.deactivate()
+	_set_vfx_visible(false)
 	attack_finished.emit()
+
+
+func _set_vfx_visible(value: bool) -> void:
+	if vfx != null:
+		vfx.visible = value

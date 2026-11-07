@@ -1,0 +1,2313 @@
+﻿
+===== components\camera\camera_rig.gd =====
+
+class_name CameraRig
+extends Camera2D
+## CÃ¢mera com dois modos + tremor de tela.
+##  STATIC: parada no centro da arena (combates em arena fechada).
+##  FOLLOW: segue o alvo suavemente, limitada pelo retÃ¢ngulo da arena.
+
+enum Mode { STATIC, FOLLOW }
+
+@export var mode: Mode = Mode.STATIC
+@export var target: Node2D
+## RetÃ¢ngulo da arena em coordenadas do mundo. Vira o limite da cÃ¢mera.
+@export var arena_rect: Rect2 = Rect2(0, 0, 640, 360)
+@export var follow_speed: float = 8.0
+@export var shake_decay: float = 30.0
+
+var _shake: float = 0.0
+
+
+func _ready() -> void:
+	limit_left = int(arena_rect.position.x)
+	limit_top = int(arena_rect.position.y)
+	limit_right = int(arena_rect.end.x)
+	limit_bottom = int(arena_rect.end.y)
+	if mode == Mode.STATIC:
+		global_position = arena_rect.get_center()
+	elif target:
+		global_position = target.global_position
+
+
+func _process(delta: float) -> void:
+	if mode == Mode.FOLLOW and target:
+		var t := 1.0 - exp(-follow_speed * delta)  # suavizaÃ§Ã£o independente de FPS
+		global_position = global_position.lerp(target.global_position, t)
+
+	if _shake > 0.0:
+		offset = Vector2(randf_range(-1.0, 1.0), randf_range(-1.0, 1.0)) * _shake
+		_shake = move_toward(_shake, 0.0, shake_decay * delta)
+	else:
+		offset = Vector2.ZERO
+
+
+## Chame ao acertar um golpe forte, tomar dano, etc. (strength em pixels)
+func shake(strength: float = 3.0) -> void:
+	_shake = maxf(_shake, strength)
+
+
+===== components\ammo_component.gd =====
+
+# components/ammo_component.gd
+class_name AmmoComponent
+extends Node
+## MuniÃ§Ã£o contada (pedras). SÃ³ guarda e controla a quantidade; quem atira e quem mostra
+## na tela (HUD) apenas conversam com este componente.
+## Quando existir o RunState, SÃ“ este arquivo muda para ler/gravar a muniÃ§Ã£o lÃ¡,
+## para ela persistir entre salas. Quem usa o componente nÃ£o precisa mudar.
+
+## Emitido sempre que a quantidade muda (o HUD escuta este sinal).
+signal changed(current: int, maximum: int)
+## Emitido ao tentar gastar sem ter muniÃ§Ã£o (bom lugar para um som de "vazio").
+signal depleted
+
+@export var max_ammo: int = 6
+
+var current: int = 0
+
+
+func _ready() -> void:
+	current = max_ammo
+
+
+func has(amount: int = 1) -> bool:
+	return current >= amount
+
+
+## Gasta muniÃ§Ã£o. Retorna false (e emite `depleted`) se nÃ£o houver o suficiente.
+func consume(amount: int = 1) -> bool:
+	if current < amount:
+		depleted.emit()
+		return false
+	current -= amount
+	changed.emit(current, max_ammo)
+	return true
+
+
+## Recarrega. Sem argumento, enche tudo (use na fogueira e na loja).
+func refill(amount: int = -1) -> void:
+	var target: int = max_ammo if amount < 0 else mini(current + amount, max_ammo)
+	if target == current:
+		return
+	current = target
+	changed.emit(current, max_ammo)
+
+
+## Para relÃ­quias que aumentam a capacidade no futuro.
+func set_max(value: int, refill_to_full: bool = false) -> void:
+	max_ammo = maxi(value, 0)
+	current = max_ammo if refill_to_full else mini(current, max_ammo)
+	changed.emit(current, max_ammo)
+
+
+===== components\attack_component.gd =====
+
+# components/attack_component.gd
+class_name AttackComponent
+extends Node2D
+## Ataque melee em 3 fases: STARTUP (preparaÃ§Ã£o) -> ACTIVE (hitbox ligada) -> RECOVERY (recuperaÃ§Ã£o).
+## Quem decide QUANDO atacar Ã© o dono (ex.: o estado Attack do Player), chamando start().
+## Este componente sÃ³ executa as fases, lendo tempos e dano do AttackData.
+## Ã‰ um Node2D (e nÃ£o Node) para o Hitbox filho herdar posiÃ§Ã£o/flip do Valtair.
+## O pai precisa ser um CharacterBody2D e deve existir um filho Hitbox chamado "Hitbox".
+##
+## COM sprites/animaÃ§Ã£o: desmarque `timer_driven` e chame enter_active(), enter_recovery()
+## e finish() a partir de uma "Call Method Track" no AnimationPlayer.
+
+signal attack_started
+signal active_started
+signal active_ended
+signal attack_finished
+signal hit_landed(hurtbox: Hurtbox)
+
+enum State { IDLE, STARTUP, ACTIVE, RECOVERY }
+
+@export var attack_data: AttackData
+@export var timer_driven: bool = true
+## Efeito visual do golpe (ex.: o nÃ³ SlashFX). Fica escondido e sÃ³ aparece na fase ACTIVE.
+@export var vfx: CanvasItem
+
+@onready var body: CharacterBody2D = get_parent() as CharacterBody2D
+@onready var hitbox: Hitbox = $Hitbox as Hitbox
+
+var state: State = State.IDLE
+var _timer: float = 0.0
+
+
+func _ready() -> void:
+	assert(attack_data != null, "AttackComponent precisa de um AttackData atribuÃ­do no Inspetor!")
+	hitbox.source = body
+	hitbox.damage = attack_data.damage
+	hitbox.hit_landed.connect(func(h: Hurtbox) -> void: hit_landed.emit(h))
+	_set_vfx_visible(false)
+
+
+func is_attacking() -> bool:
+	return state != State.IDLE
+
+
+func set_facing(facing: int) -> void:
+	scale.x = float(facing)
+
+
+## Inicia o golpe. Ignorado se jÃ¡ estiver atacando.
+func start() -> void:
+	if state != State.IDLE:
+		return
+	state = State.STARTUP
+	_timer = attack_data.startup_time()
+	attack_started.emit()
+	if timer_driven and attack_data.startup_frames <= 0:
+		enter_active()
+
+
+## Deve ser chamado a cada frame de fÃ­sica por quem Ã© dono do ataque.
+func update(delta: float) -> void:
+	if state == State.IDLE or not timer_driven:
+		return
+	_timer -= delta
+	if _timer > 0.0:
+		return
+	match state:
+		State.STARTUP: enter_active()
+		State.ACTIVE: enter_recovery()
+		State.RECOVERY: finish()
+
+
+## Interrompe o golpe (ex.: o dono saiu do estado). Seguro de chamar em qualquer momento.
+func cancel() -> void:
+	if state == State.IDLE:
+		return
+	finish()
+
+
+## --- PÃºblicos: o AnimationPlayer pode chamar estes trÃªs ---
+func enter_active() -> void:
+	state = State.ACTIVE
+	_timer = attack_data.active_time()
+	hitbox.damage = attack_data.damage
+	hitbox.activate()
+	_set_vfx_visible(true)
+	active_started.emit()
+
+
+func enter_recovery() -> void:
+	state = State.RECOVERY
+	_timer = attack_data.recovery_time()
+	hitbox.deactivate()
+	_set_vfx_visible(false)
+	active_ended.emit()
+
+
+func finish() -> void:
+	state = State.IDLE
+	hitbox.deactivate()
+	_set_vfx_visible(false)
+	attack_finished.emit()
+
+
+func _set_vfx_visible(value: bool) -> void:
+	if vfx != null:
+		vfx.visible = value
+
+
+===== components\health_component.gd =====
+
+# components/health_component.gd
+class_name HealthComponent
+extends Node
+## Vida genÃ©rica. Serve para o Valtair, para os inimigos e para o boneco de treino.
+
+signal damaged(amount: int, source: Node)
+## Emitido sempre que a vida muda (dano, cura ou reset). Ã‰ o sinal que o HUD usa.
+signal changed(current: int, maximum: int)
+signal died
+
+@export var max_health: int = 5
+
+var health: int
+
+
+func _ready() -> void:
+	health = max_health
+
+
+func take_damage(amount: int, source: Node = null) -> void:
+	if health <= 0:
+		return
+	health = maxi(health - amount, 0)
+	damaged.emit(amount, source)
+	changed.emit(health, max_health)
+	if health == 0:
+		died.emit()
+
+
+func heal(amount: int) -> void:
+	health = mini(health + amount, max_health)
+	changed.emit(health, max_health)
+
+
+## Restaura a vida mÃ¡xima (ex.: boneco de treino renascendo, nova run).
+func reset() -> void:
+	health = max_health
+	changed.emit(health, max_health)
+
+
+===== components\hitbox.gd =====
+
+class_name Hitbox
+extends Area2D
+## Ãrea que CAUSA dano. Fica desligada atÃ© alguÃ©m chamar activate().
+## Cada Hurtbox sÃ³ Ã© atingida uma vez por ativaÃ§Ã£o.
+
+signal hit_landed(hurtbox: Hurtbox)
+
+@export var team: StringName = &"player"
+@export var damage: int = 1
+## Knockback para quem olha para a direita. O X Ã© espelhado automaticamente
+## se o Hitbox (ou um pai dele) estiver com scale.x negativo.
+@export var knockback: Vector2 = Vector2(160.0, -80.0)
+
+var source: Node
+var _already_hit: Array[Hurtbox] = []
+
+
+func _ready() -> void:
+	monitoring = false
+	monitorable = false  # ninguÃ©m precisa detectar o Hitbox
+
+
+func activate() -> void:
+	_already_hit.clear()
+	monitoring = true
+
+
+func deactivate() -> void:
+	monitoring = false
+
+
+func _physics_process(_delta: float) -> void:
+	if not monitoring:
+		return
+	for area in get_overlapping_areas():
+		var target := area as Hurtbox
+		if target == null or target.team == team or target in _already_hit:
+			continue
+		_already_hit.append(target)
+		var dir := signf(global_transform.x.x)
+		var kb := Vector2(knockback.x * dir, knockback.y)
+		target.receive_hit(damage, source if source else self, kb)
+		hit_landed.emit(target)
+
+
+===== components\hurtbox.gd =====
+
+class_name Hurtbox
+extends Area2D
+## Ãrea que RECEBE dano. Coloque em qualquer coisa que possa ser atingida.
+## `team` evita fogo amigo: um Hitbox sÃ³ atinge Hurtboxes de outro time.
+
+signal hit_received(damage: int, source: Node, knockback: Vector2)
+
+@export var team: StringName = &"enemy"
+## Opcional. Se vazio, procura um irmÃ£o chamado "Health".
+@export var health: HealthComponent
+
+
+func _ready() -> void:
+	monitoring = false  # sÃ³ precisa ser detectada, nÃ£o detecta nada
+	if health == null and get_parent():
+		health = get_parent().get_node_or_null("Health") as HealthComponent
+
+
+func receive_hit(damage: int, source: Node, knockback: Vector2) -> void:
+	if health:
+		health.take_damage(damage, source)
+	hit_received.emit(damage, source, knockback)
+
+
+===== components\jump_component.gd =====
+
+class_name JumpComponent
+extends Node
+## Movimento VERTICAL: gravidade + pulo. O pai precisa ser um CharacterBody2D.
+## Cada "truque" de game feel pode ser desligado pelo Inspector:
+##  - altura variÃ¡vel: variable_height = false
+##  - coyote time:     coyote_time = 0
+##  - jump buffer:     jump_buffer_time = 0
+##  - pulo duplo:      max_jumps = 2
+
+signal jumped
+signal landed
+
+@export var jump_velocity: float = -340.0  # negativo = para cima (Y cresce para baixo)
+@export var gravity: float = 900.0
+## Cair mais rÃ¡pido do que subir deixa o pulo menos "flutuante".
+@export var fall_gravity_multiplier: float = 1.5
+@export var max_fall_speed: float = 600.0
+@export_group("Game feel")
+@export var variable_height: bool = true
+## Ao soltar o botÃ£o subindo, a velocidade vertical Ã© multiplicada por isso.
+@export_range(0.0, 1.0) var jump_cut_multiplier: float = 0.4
+@export var coyote_time: float = 0.10
+@export var jump_buffer_time: float = 0.10
+@export var max_jumps: int = 1
+
+@onready var body: CharacterBody2D = get_parent() as CharacterBody2D
+
+var _coyote: float = 0.0
+var _buffer: float = 0.0
+var _air_jumps_left: int = 0
+var _was_on_floor: bool = false
+
+
+func update(delta: float) -> void:
+	_apply_gravity(delta)
+	_update_timers(delta)
+	_try_jump()
+	_apply_jump_cut()
+	_was_on_floor = body.is_on_floor()
+
+
+func _apply_gravity(delta: float) -> void:
+	if body.is_on_floor():
+		return
+	var g := gravity
+	if body.velocity.y > 0.0:
+		g *= fall_gravity_multiplier
+	body.velocity.y = minf(body.velocity.y + g * delta, max_fall_speed)
+
+
+func _update_timers(delta: float) -> void:
+	if body.is_on_floor():
+		_coyote = coyote_time
+		_air_jumps_left = maxi(max_jumps - 1, 0)
+		if not _was_on_floor:
+			landed.emit()
+	else:
+		_coyote = maxf(_coyote - delta, 0.0)
+
+	_buffer = maxf(_buffer - delta, 0.0)
+	if Input.is_action_just_pressed(&"jump"):
+		_buffer = maxf(jump_buffer_time, delta)  # garante pelo menos este frame
+
+
+func _try_jump() -> void:
+	if _buffer <= 0.0:
+		return
+	if _coyote > 0.0 or body.is_on_floor():
+		_do_jump()
+	elif _air_jumps_left > 0:
+		_air_jumps_left -= 1
+		_do_jump()
+
+
+func _do_jump() -> void:
+	body.velocity.y = jump_velocity
+	_coyote = 0.0
+	_buffer = 0.0
+	jumped.emit()
+
+
+func _apply_jump_cut() -> void:
+	if variable_height and Input.is_action_just_released(&"jump") and body.velocity.y < 0.0:
+		body.velocity.y *= jump_cut_multiplier
+
+
+===== components\movement_component.gd =====
+
+class_name MovementComponent
+extends Node
+## Movimento HORIZONTAL. O pai precisa ser um CharacterBody2D.
+## NÃ£o chama move_and_slide(): quem manda Ã© o Player.
+
+enum Mode {
+	INSTANT,      ## velocidade vai direto ao alvo. Seco, estilo Hollow Knight.
+	ACCELERATED,  ## acelera e freia. Mais "peso", estilo Dead Cells.
+}
+
+@export var mode: Mode = Mode.ACCELERATED
+@export var max_speed: float = 140.0
+@export_group("SÃ³ no modo ACCELERATED")
+@export var acceleration: float = 1100.0
+@export var friction: float = 1500.0
+## Multiplicador de aceleraÃ§Ã£o/atrito no ar (1.0 = igual ao chÃ£o).
+@export var air_control: float = 0.8
+
+@onready var body: CharacterBody2D = get_parent() as CharacterBody2D
+
+
+func update(delta: float, dir: float, speed_multiplier: float = 1.0) -> void:
+	var target := dir * max_speed * speed_multiplier
+	match mode:
+		Mode.INSTANT:
+			body.velocity.x = target
+		Mode.ACCELERATED:
+			var rate := acceleration if absf(dir) > 0.01 else friction
+			if not body.is_on_floor():
+				rate *= air_control
+			body.velocity.x = move_toward(body.velocity.x, target, rate * delta)
+
+
+===== components\ranged_attack_component.gd =====
+
+# components/ranged_attack_component.gd
+class_name RangedAttackComponent
+extends Node
+## Dispara projÃ©til reto. NÃƒO lÃª input: quem Ã© dono (o Player, ou a IA de um inimigo)
+## chama try_fire(). O pai precisa ser um CharacterBody2D.
+## O projÃ©til Ã© adicionado Ã  cena onde o dono estÃ¡, para nÃ£o acompanhar o movimento dele.
+
+signal fired
+
+@export var projectile_scene: PackedScene
+@export var projectile_data: ProjectileData
+## PosiÃ§Ã£o de saÃ­da em relaÃ§Ã£o ao dono, para o lado direito (o x Ã© espelhado com `facing`).
+@export var muzzle_offset: Vector2 = Vector2(14.0, -10.0)
+@export var cooldown: float = 0.35
+@export var ammo_cost: int = 1
+## Opcional. Sem AmmoComponent o disparo Ã© ilimitado (Ãºtil para inimigos).
+@export var ammo: AmmoComponent
+
+@onready var body: CharacterBody2D = get_parent() as CharacterBody2D
+
+var _cooldown_left: float = 0.0
+
+
+func _ready() -> void:
+	assert(projectile_scene != null, "RangedAttackComponent precisa de uma Projectile Scene no Inspetor!")
+	assert(projectile_data != null, "RangedAttackComponent precisa de um Projectile Data no Inspetor!")
+
+
+func _physics_process(delta: float) -> void:
+	if _cooldown_left > 0.0:
+		_cooldown_left -= delta
+
+
+## facing: 1 = direita, -1 = esquerda. Retorna true se atirou.
+func try_fire(facing: int) -> bool:
+	if _cooldown_left > 0.0:
+		return false
+	if ammo != null and not ammo.consume(ammo_cost):
+		return false
+
+	var projectile: Projectile = projectile_scene.instantiate() as Projectile
+	body.get_parent().add_child(projectile)
+	projectile.global_position = body.global_position + Vector2(muzzle_offset.x * facing, muzzle_offset.y)
+	projectile.setup(projectile_data, facing, body)
+
+	_cooldown_left = cooldown
+	fired.emit()
+	return true
+
+
+===== core\event_bus.gd =====
+
+# core/event_bus.gd
+extends Node
+## Barramento global de eventos.
+## Registre como Autoload com o nome "EventBus" e SEM `class_name` (senÃ£o dÃ¡ conflito de nome).
+## SÃ³ entram aqui eventos que mais de um sistema precisa ouvir; cada sinal novo
+## Ã© adicionado quando passa a ser usado, nÃ£o antes.
+## ConvenÃ§Ã£o de nome: quem emitiu + o que aconteceu, no passado (player_health_changed).
+
+@warning_ignore("unused_signal")
+signal player_health_changed(current: int, maximum: int)
+@warning_ignore("unused_signal")
+signal player_ammo_changed(current: int, maximum: int)
+@warning_ignore("unused_signal")
+signal player_died
+
+
+===== core\input_setup.gd =====
+
+class_name InputSetup
+extends RefCounted
+## Registra as aÃ§Ãµes de input se elas ainda nÃ£o existirem no Input Map.
+## Assim vocÃª nÃ£o precisa configurar nada em Project Settings para testar.
+## Se depois vocÃª criar as aÃ§Ãµes manualmente no Input Map, este script nÃ£o sobrescreve nada.
+
+static func ensure_actions() -> void:
+	_ensure(&"move_left", [_key(KEY_A), _key(KEY_LEFT), _joy_axis(JOY_AXIS_LEFT_X, -1.0)])
+	_ensure(&"move_right", [_key(KEY_D), _key(KEY_RIGHT), _joy_axis(JOY_AXIS_LEFT_X, 1.0)])
+	_ensure(&"jump", [_key(KEY_SPACE), _key(KEY_W), _key(KEY_UP), _joy_button(JOY_BUTTON_A)])
+	_ensure(&"attack", [_key(KEY_J), _key(KEY_X), _mouse(MOUSE_BUTTON_LEFT), _joy_button(JOY_BUTTON_X)])
+
+
+static func _ensure(action: StringName, events: Array) -> void:
+	if InputMap.has_action(action):
+		return
+	InputMap.add_action(action, 0.5)
+	for e in events:
+		InputMap.action_add_event(action, e)
+
+
+static func _key(code: Key) -> InputEventKey:
+	var e := InputEventKey.new()
+	e.physical_keycode = code
+	return e
+
+
+static func _mouse(btn: MouseButton) -> InputEventMouseButton:
+	var e := InputEventMouseButton.new()
+	e.button_index = btn
+	return e
+
+
+static func _joy_button(btn: JoyButton) -> InputEventJoypadButton:
+	var e := InputEventJoypadButton.new()
+	e.button_index = btn
+	return e
+
+
+static func _joy_axis(axis: JoyAxis, value: float) -> InputEventJoypadMotion:
+	var e := InputEventJoypadMotion.new()
+	e.axis = axis
+	e.axis_value = value
+	return e
+
+
+===== data\attack_data.gd =====
+
+# data/definitions/attack_data.gd
+class_name AttackData
+extends Resource
+## Dados de um ataque. Crie um .tres por golpe (Novo Recurso > AttackData).
+
+enum DamageType { PHYSICAL, FIRE }
+
+@export var id: StringName
+@export_group("Dano")
+@export var damage: int = 1
+@export var damage_type: DamageType = DamageType.PHYSICAL
+## x positivo empurra para longe do atacante (a direÃ§Ã£o Ã© aplicada em runtime)
+@export var knockback: Vector2 = Vector2(180, -80)
+@export var hitstun: float = 0.2
+@export var hitstop_frames: int = 3
+@export_group("Tempo (em frames de fÃ­sica)")
+@export var startup_frames: int = 4
+@export var active_frames: int = 4
+@export var recovery_frames: int = 8
+@export_group("Movimento durante o golpe")
+## Velocidade horizontal no chÃ£o (0 = o Valtair para; 1 = anda normalmente).
+@export_range(0.0, 1.0) var ground_move_multiplier: float = 0.0
+## No ar (1 = controle normal, como em Fall; 0 = congela o horizontal).
+@export_range(0.0, 1.0) var air_move_multiplier: float = 1.0
+@export_group("Visual")
+@export var vfx: SpriteFrames
+
+
+func startup_time() -> float:
+	return startup_frames / float(Engine.physics_ticks_per_second)
+
+
+func active_time() -> float:
+	return active_frames / float(Engine.physics_ticks_per_second)
+
+
+func recovery_time() -> float:
+	return recovery_frames / float(Engine.physics_ticks_per_second)
+
+
+===== data\projectile_data.gd =====
+
+# data/definitions/projectile_data.gd
+class_name ProjectileData
+extends Resource
+## Dados de um projÃ©til reto. Crie um .tres por tipo (pedra do Valtair, bola de fogo da Cuca...).
+
+@export var speed: float = 320.0
+## Tempo mÃ¡ximo de vida em segundos (o projÃ©til some mesmo sem acertar nada).
+@export var lifetime: float = 1.2
+@export var damage: int = 1
+
+
+===== dev\test_arena.tscn =====
+
+[gd_scene format=3 uid="uid://b76vof3pdl14g"]
+
+[ext_resource type="PackedScene" uid="uid://cl1nmi42voduh" path="res://entities/player/player.tscn" id="1"]
+[ext_resource type="PackedScene" uid="uid://dc3cg0r1sq183" path="res://dev/training_dummy.tscn" id="2"]
+[ext_resource type="Script" uid="uid://ce0fu2nsbfacq" path="res://components/camera/camera_rig.gd" id="3"]
+[ext_resource type="PackedScene" uid="uid://d1xit5n6l7024" path="res://ui/hud.tscn" id="4_3uw5k"]
+
+[sub_resource type="RectangleShape2D" id="floor_shape"]
+size = Vector2(640, 40)
+
+[sub_resource type="RectangleShape2D" id="wall_shape"]
+size = Vector2(20, 360)
+
+[sub_resource type="RectangleShape2D" id="platform_shape"]
+size = Vector2(100, 8)
+
+[node name="TestArena" type="Node2D" unique_id=230370617]
+
+[node name="Background" type="ColorRect" parent="." unique_id=1852479053]
+z_index = -10
+offset_right = 640.0
+offset_bottom = 360.0
+color = Color(0.08, 0.16, 0.12, 1)
+
+[node name="Floor" type="StaticBody2D" parent="." unique_id=1148719217]
+position = Vector2(320, 330)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Floor" unique_id=1070066734]
+shape = SubResource("floor_shape")
+
+[node name="Polygon2D" type="Polygon2D" parent="Floor" unique_id=628497586]
+color = Color(0.25, 0.2, 0.15, 1)
+polygon = PackedVector2Array(-320, -20, 320, -20, 320, 20, -320, 20)
+
+[node name="WallLeft" type="StaticBody2D" parent="." unique_id=164808665]
+position = Vector2(-10, 180)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="WallLeft" unique_id=1809691918]
+shape = SubResource("wall_shape")
+
+[node name="WallRight" type="StaticBody2D" parent="." unique_id=217736155]
+position = Vector2(650, 180)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="WallRight" unique_id=1624266726]
+shape = SubResource("wall_shape")
+
+[node name="Platform" type="StaticBody2D" parent="." unique_id=1355399417]
+position = Vector2(500, 270)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platform" unique_id=98400886]
+shape = SubResource("platform_shape")
+one_way_collision = true
+
+[node name="Polygon2D" type="Polygon2D" parent="Platform" unique_id=1040107618]
+color = Color(0.35, 0.28, 0.2, 1)
+polygon = PackedVector2Array(-50, -4, 50, -4, 50, 4, -50, 4)
+
+[node name="Player" parent="." unique_id=2042409436 instance=ExtResource("1")]
+position = Vector2(120, 320)
+
+[node name="TrainingDummy" parent="." unique_id=1322005188 instance=ExtResource("2")]
+position = Vector2(300, 305)
+
+[node name="CameraRig" type="Camera2D" parent="." unique_id=783073598]
+script = ExtResource("3")
+target = NodePath("../Player")
+
+[node name="Hud" parent="." unique_id=1070552264 instance=ExtResource("4_3uw5k")]
+
+
+===== dev\training_dummy.gd =====
+
+extends Node2D
+## Boneco de treino: pisca ao ser atingido e "renasce" ao morrer.
+
+@onready var health: HealthComponent = $Health
+@onready var hurtbox: Hurtbox = $Hurtbox
+## O nÃ³ visual precisa se chamar "Shape". Pode ser Polygon2D, Sprite2D ou AnimatedSprite2D.
+@onready var shape: CanvasItem = $Shape
+
+
+func _ready() -> void:
+	hurtbox.hit_received.connect(_on_hit)
+	health.died.connect(_on_died)
+
+
+func _on_hit(damage: int, _source: Node, _knockback: Vector2) -> void:
+	print("Boneco levou ", damage, " de dano. Vida: ", health.health, "/", health.max_health)
+	shape.modulate = Color(1.0, 0.35, 0.35)
+	await get_tree().create_timer(0.08).timeout
+	shape.modulate = Color.WHITE
+
+
+func _on_died() -> void:
+	await get_tree().create_timer(0.6).timeout
+	health.reset()
+
+
+===== dev\training_dummy.tscn =====
+
+[gd_scene format=3 uid="uid://dc3cg0r1sq183"]
+
+[ext_resource type="Script" uid="uid://cmrc3qih8meqg" path="res://dev/training_dummy.gd" id="1_8eh5k"]
+[ext_resource type="Texture2D" uid="uid://d0hgk1effho6a" path="res://entities/enemies/mushroom_guy/mushroom_creature.png" id="2_8eh5k"]
+[ext_resource type="Script" uid="uid://b4101c84uef8o" path="res://components/health_component.gd" id="3_r3xm1"]
+[ext_resource type="Script" uid="uid://cejkgwdmbli8w" path="res://components/hurtbox.gd" id="4_m2jw4"]
+
+[sub_resource type="RectangleShape2D" id="shape"]
+size = Vector2(16, 30)
+
+[node name="TrainingDummy" type="Node2D" unique_id=1098304201]
+script = ExtResource("1_8eh5k")
+
+[node name="Shape" type="Sprite2D" parent="." unique_id=1363608297]
+texture = ExtResource("2_8eh5k")
+offset = Vector2(0, -15)
+
+[node name="Health" type="Node" parent="." unique_id=1183010247]
+script = ExtResource("3_r3xm1")
+max_health = 3
+
+[node name="Hurtbox" type="Area2D" parent="." unique_id=1713469961]
+position = Vector2(0, -14)
+script = ExtResource("4_m2jw4")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox" unique_id=471698552]
+shape = SubResource("shape")
+
+
+===== entities\player\states\attack.gd =====
+
+# entities/player/states/attack.gd
+extends PlayerState
+## O AttackComponent Ã© dono do tempo e do dano do golpe.
+## Este estado controla o movimento (valores no AttackData) e decide para onde voltar quando o golpe termina.
+
+var _queued: bool = false
+
+func enter() -> void:
+	_queued = false
+	player.attack.start()
+
+func exit() -> void:
+	# Se saiu no meio do golpe (ex.: tomar dano no futuro), garante a hitbox desligada.
+	player.attack.cancel()
+
+func physics_update(delta: float) -> void:
+	player.apply_gravity(delta)
+	player.handle_jump_buffer(delta)
+
+	# Pular durante o golpe NÃƒO cancela o ataque: sÃ³ dÃ¡ o impulso e o golpe segue atÃ© o fim.
+	if player.can_jump() and player.jump_buffered:
+		player.start_jump()
+
+	# Altura variÃ¡vel continua valendo durante o golpe (soltar o pulo corta a subida).
+	player.apply_jump_cut()
+
+	# Movimento horizontal durante o golpe: input do jogador x multiplicador do AttackData.
+	# O lado do Valtair nÃ£o muda durante o golpe, para a hitbox nÃ£o virar no meio do ataque.
+	var data: AttackData = player.attack.attack_data
+	var input_x: float = Input.get_axis("move_left", "move_right")
+	var multiplier: float = data.ground_move_multiplier if player.is_on_floor() else data.air_move_multiplier
+	player.velocity.x = input_x * player.stats.move_speed * multiplier
+
+	# BotÃ£o apertado durante o golpe: encadeia o prÃ³ximo quando este terminar.
+	if Input.is_action_just_pressed("attack"):
+		_queued = true
+
+	player.attack.update(delta)
+
+	if not player.attack.is_attacking():
+		if _queued:
+			_queued = false
+			player.attack.start()
+		else:
+			# Se um pulo comeÃ§ou neste frame (velocity.y < 0), vai para Fall mesmo com o chÃ£o do frame anterior.
+			var grounded: bool = player.is_on_floor() and player.velocity.y >= 0.0
+			state_machine.transition_to("idle" if grounded else "fall")
+			return
+
+	player.move_and_slide()
+
+
+===== entities\player\states\dash.gd =====
+
+# entities/player/states/dash.gd
+extends PlayerState
+## Dash horizontal curto. Sem i-frames (decisÃ£o de design): sÃ³ reposiciona o Valtair.
+## Cancela o golpe corpo a corpo (decisÃ£o provisÃ³ria): ao sair do estado Attack, o
+## attack.gd chama cancel() no componente. A entrada neste estado Ã© feita pelo Player
+## (ver Player._physics_process), por isso nenhum outro estado precisa checar o botÃ£o.
+
+var _time_left: float = 0.0
+var _direction: float = 1.0
+
+func enter() -> void:
+	# DireÃ§Ã£o: a do input, se houver; senÃ£o, a que o Valtair estÃ¡ olhando.
+	var input_x: float = Input.get_axis("move_left", "move_right")
+	_direction = signf(input_x) if input_x != 0.0 else float(player.facing)
+	player.update_facing_direction(_direction)
+
+	_time_left = player.stats.dash_duration
+	player.dash_cooldown_left = player.stats.dash_cooldown
+	if not player.is_on_floor():
+		player.air_dashes_left -= 1
+
+func physics_update(delta: float) -> void:
+	player.velocity.x = _direction * (player.stats.dash_distance / player.stats.dash_duration)
+
+	# 0 = dash reto, sem cair durante ele.
+	if player.stats.dash_gravity_multiplier <= 0.0:
+		player.velocity.y = 0.0
+	else:
+		player.apply_gravity(delta * player.stats.dash_gravity_multiplier)
+
+	_time_left -= delta
+	if _time_left <= 0.0:
+		if not player.is_on_floor():
+			state_machine.transition_to("fall")
+		elif Input.get_axis("move_left", "move_right") != 0.0:
+			state_machine.transition_to("run")
+		else:
+			state_machine.transition_to("idle")
+		return
+
+	player.move_and_slide()
+
+
+===== entities\player\states\fall.gd =====
+
+# entities/player/states/fall.gd
+extends PlayerState
+
+func physics_update(delta: float) -> void:
+	player.apply_gravity(delta)
+	# Pode chegar aqui ainda subindo (ex.: veio de um ataque no ar).
+	player.apply_jump_cut()
+	player.handle_jump_buffer(delta)
+
+	var input_x: float = Input.get_axis("move_left", "move_right")
+	player.velocity.x = input_x * player.stats.move_speed
+	player.update_facing_direction(input_x)
+
+	if Input.is_action_just_pressed("attack"):
+		state_machine.transition_to("attack")
+		return
+
+	if player.can_jump() and player.jump_buffered:
+		state_machine.transition_to("jump")
+		return
+
+	if player.is_on_floor():
+		if input_x != 0.0:
+			state_machine.transition_to("run")
+		else:
+			state_machine.transition_to("idle")
+		return
+
+	player.move_and_slide()
+
+
+===== entities\player\states\idle.gd =====
+
+# entities/player/states/idle.gd
+extends PlayerState
+
+func enter() -> void:
+	player.velocity.x = 0.0
+
+func physics_update(delta: float) -> void:
+	player.apply_gravity(delta)
+	player.handle_jump_buffer(delta)
+	
+	if Input.is_action_just_pressed("attack"):
+		state_machine.transition_to("attack")
+		return
+		
+	if player.can_jump() and player.jump_buffered:
+		state_machine.transition_to("jump")
+		return
+		
+	var input_x: float = Input.get_axis("move_left", "move_right")
+	if input_x != 0.0:
+		state_machine.transition_to("run")
+		return
+		
+	if not player.is_on_floor():
+		state_machine.transition_to("fall")
+		return
+		
+	player.move_and_slide()
+
+
+===== entities\player\states\jump.gd =====
+
+# entities/player/states/jump.gd
+extends PlayerState
+
+func enter() -> void:
+	player.start_jump()
+
+func physics_update(delta: float) -> void:
+	player.apply_gravity(delta)
+	# Registra o botÃ£o de pulo tambÃ©m durante a subida (buffer para o pouso).
+	player.handle_jump_buffer(delta)
+	# Altura variÃ¡vel: soltar o botÃ£o enquanto sobe corta o pulo (lÃ³gica compartilhada no Player).
+	player.apply_jump_cut()
+
+	var input_x: float = Input.get_axis("move_left", "move_right")
+	player.velocity.x = input_x * player.stats.move_speed
+	player.update_facing_direction(input_x)
+
+	if Input.is_action_just_pressed("attack"):
+		state_machine.transition_to("attack")
+		return
+
+	if player.velocity.y >= 0.0:
+		state_machine.transition_to("fall")
+		return
+
+	player.move_and_slide()
+
+
+===== entities\player\states\run.gd =====
+
+# entities/player/states/run.gd
+extends PlayerState
+
+func physics_update(delta: float) -> void:
+	player.apply_gravity(delta)
+	player.handle_jump_buffer(delta)
+
+	if Input.is_action_just_pressed("attack"):
+		state_machine.transition_to("attack")
+		return
+
+	var input_x: float = Input.get_axis("move_left", "move_right")
+	if input_x == 0.0:
+		state_machine.transition_to("idle")
+		return
+
+	if player.can_jump() and player.jump_buffered:
+		state_machine.transition_to("jump")
+		return
+
+	# O coyote time Ã© iniciado pelo Player ao perder o chÃ£o; aqui sÃ³ trocamos de estado.
+	if not player.is_on_floor():
+		state_machine.transition_to("fall")
+		return
+
+	player.velocity.x = input_x * player.stats.move_speed
+	player.update_facing_direction(input_x)
+	player.move_and_slide()
+
+
+===== entities\player\player.gd =====
+
+# entities/player/player.gd
+class_name Player
+extends CharacterBody2D
+## Controlador principal do Player: estado compartilhado e utilidades usadas pelos estados.
+
+@export var stats: PlayerStats
+
+@onready var state_machine: StateMachine = $StateMachine
+@onready var sprite: Sprite2D = $Visual/Sprite2D
+## NÃ³s filhos diretos do Player (os nomes precisam ser exatamente estes).
+@onready var attack: AttackComponent = $AttackComponent
+@onready var health: HealthComponent = $Health
+@onready var ammo: AmmoComponent = $AmmoComponent
+@onready var ranged: RangedAttackComponent = $RangedAttackComponent
+
+var facing: int = 1  # 1 = direita, -1 = esquerda
+var coyote_timer: float = 0.0
+var jump_buffer_timer: float = 0.0
+var jump_buffered: bool = false
+## Verdadeiro enquanto o corte de pulo ainda pode acontecer (subindo por causa de um pulo).
+var jump_cut_available: bool = false
+## Tempo restante atÃ© poder usar o dash de novo (conta desde o inÃ­cio do dash).
+var dash_cooldown_left: float = 0.0
+## Dashes no ar ainda disponÃ­veis; recarrega ao tocar o chÃ£o.
+var air_dashes_left: int = 0
+
+var _was_on_floor: bool = false
+
+
+func _ready() -> void:
+	assert(stats != null, "ERRO: O recurso PlayerStats.tres precisa ser atribuÃ­do no Inspetor do Player!")
+	state_machine.init(self)
+	_connect_hud_events()
+
+
+func _physics_process(delta: float) -> void:
+	# Coyote time centralizado: comeÃ§a quando o chÃ£o some sem ter sido um pulo (velocity.y >= 0).
+	# Assim nenhum estado precisa lembrar de chamar start_coyote_timer().
+	var on_floor: bool = is_on_floor()
+	if _was_on_floor and not on_floor and velocity.y >= 0.0:
+		start_coyote_timer()
+	_was_on_floor = on_floor
+
+	if coyote_timer > 0.0:
+		coyote_timer -= delta
+
+	if on_floor:
+		air_dashes_left = stats.max_air_dashes
+	if dash_cooldown_left > 0.0:
+		dash_cooldown_left -= delta
+
+	# Dash: transiÃ§Ã£o global, vale em qualquer estado (inclusive durante o golpe, que Ã© cancelado).
+	# Roda antes dos estados, entÃ£o a troca jÃ¡ vale neste mesmo frame.
+	if Input.is_action_just_pressed("dodge") and can_dash():
+		state_machine.transition_to("dash")
+
+	# Ataque ranged: aÃ§Ã£o paralela, nÃ£o trava o movimento. Bloqueado durante o golpe corpo a corpo.
+	if Input.is_action_just_pressed("ranged_attack") and not attack.is_attacking():
+		ranged.try_fire(facing)
+
+
+func apply_gravity(delta: float) -> void:
+	if is_on_floor():
+		return
+	var g: float = stats.gravity
+	if velocity.y > 0.0:
+		g *= stats.fall_gravity_multiplier
+	velocity.y = move_toward(velocity.y, stats.max_fall_speed, g * delta)
+
+
+func can_jump() -> bool:
+	return is_on_floor() or coyote_timer > 0.0
+
+
+func can_dash() -> bool:
+	return dash_cooldown_left <= 0.0 and (is_on_floor() or air_dashes_left > 0)
+
+
+## DÃ¡ o impulso do pulo. Usado pelo estado Jump e pelo Attack (pular durante o golpe
+## nÃ£o cancela o golpe), para o pulo ter uma implementaÃ§Ã£o sÃ³.
+func start_jump() -> void:
+	velocity.y = stats.jump_velocity
+	jump_buffered = false
+	coyote_timer = 0.0
+	jump_cut_available = true
+
+
+func start_coyote_timer() -> void:
+	coyote_timer = stats.coyote_time
+
+
+func handle_jump_buffer(delta: float) -> void:
+	if Input.is_action_just_pressed("jump"):
+		jump_buffer_timer = stats.jump_buffer
+		jump_buffered = true
+	elif jump_buffered:
+		jump_buffer_timer -= delta
+		if jump_buffer_timer <= 0.0:
+			jump_buffered = false
+
+
+## Altura variÃ¡vel do pulo. Chame em TODO estado em que o Valtair pode estar subindo
+## (Jump, Attack, Fall), para soltar o botÃ£o cortar a subida mesmo atacando no ar.
+func apply_jump_cut() -> void:
+	if not jump_cut_available:
+		return
+	if velocity.y >= 0.0:
+		jump_cut_available = false  # passou do Ã¡pice: nÃ£o hÃ¡ mais o que cortar
+	elif not Input.is_action_pressed("jump"):
+		velocity.y *= stats.jump_cut_multiplier
+		jump_cut_available = false
+
+
+func update_facing_direction(input_x: float) -> void:
+	if input_x == 0.0:
+		return
+	var new_facing: int = 1 if input_x > 0.0 else -1
+	if new_facing == facing:
+		return
+	facing = new_facing
+	sprite.flip_h = facing < 0
+	attack.set_facing(facing)  # a hitbox acompanha o lado para onde o Valtair olha
+
+
+## O Player Ã© a ponte entre os seus componentes e o HUD: repassa os sinais ao EventBus.
+## Os componentes sÃ£o genÃ©ricos (servem tambÃ©m a inimigos), entÃ£o nÃ£o falam com o HUD.
+func _connect_hud_events() -> void:
+	health.changed.connect(EventBus.player_health_changed.emit)
+	ammo.changed.connect(EventBus.player_ammo_changed.emit)
+	health.died.connect(EventBus.player_died.emit)
+	# Valores iniciais, depois que todos os nÃ³s (inclusive o HUD) terminarem o _ready.
+	_emit_hud_state.call_deferred()
+
+
+func _emit_hud_state() -> void:
+	EventBus.player_health_changed.emit(health.health, health.max_health)
+	EventBus.player_ammo_changed.emit(ammo.current, ammo.max_ammo)
+
+
+# TEMPORÃRIO: testa o HUD sem inimigos. Apague quando o Corpo-Seco existir.
+func _unhandled_key_input(event: InputEvent) -> void:
+	var key: InputEventKey = event as InputEventKey
+	if key == null or not key.pressed or key.echo:
+		return
+	match key.keycode:
+		KEY_F1: health.take_damage(10)
+		KEY_F2: health.heal(10)
+		KEY_F3: ammo.refill()
+
+
+===== entities\player\player.tscn =====
+
+[gd_scene format=3 uid="uid://cl1nmi42voduh"]
+
+[ext_resource type="Script" uid="uid://7b5s5e14yghi" path="res://entities/player/player.gd" id="1_26q78"]
+[ext_resource type="Resource" uid="uid://723psfxn3m3e" path="res://entities/player/player_stats.tres" id="2_we0b7"]
+[ext_resource type="Script" uid="uid://b4101c84uef8o" path="res://components/health_component.gd" id="4_7thud"]
+[ext_resource type="Script" uid="uid://bck7j34xyv288" path="res://components/attack_component.gd" id="5_a1qjk"]
+[ext_resource type="Script" uid="uid://bprjvu4g3lmvd" path="res://components/hitbox.gd" id="6_j3ovn"]
+[ext_resource type="Texture2D" uid="uid://drutiotplsne0" path="res://entities/player/slash_fx.png" id="7_afbqv"]
+[ext_resource type="Resource" uid="uid://drrkytlhc3px2" path="res://entities/player/player_slash.tres" id="7_wvtmh"]
+[ext_resource type="Script" uid="uid://cejkgwdmbli8w" path="res://components/hurtbox.gd" id="8_gx6sm"]
+[ext_resource type="Script" uid="uid://q03686l0lng5" path="res://entities/player/state_machine.gd" id="9_afbqv"]
+[ext_resource type="Script" uid="uid://6x7alhehjyvc" path="res://entities/player/states/run.gd" id="10_gx6sm"]
+[ext_resource type="Script" uid="uid://b3l7himv71fx2" path="res://entities/player/states/jump.gd" id="11_yqrof"]
+[ext_resource type="Script" uid="uid://7boa2xiymvqj" path="res://entities/player/states/idle.gd" id="12_3wlsy"]
+[ext_resource type="Script" uid="uid://c6h3ould4bxja" path="res://entities/player/states/fall.gd" id="13_b2kln"]
+[ext_resource type="Script" uid="uid://3yvx5fyda6ov" path="res://entities/player/states/attack.gd" id="14_we0b7"]
+[ext_resource type="Script" uid="uid://12fqn42eukj0" path="res://components/ammo_component.gd" id="15_3wlsy"]
+[ext_resource type="Script" uid="uid://c2ym3jvflxymj" path="res://entities/player/states/dash.gd" id="15_we0b7"]
+[ext_resource type="Script" uid="uid://ch2ofmejjk7ff" path="res://components/ranged_attack_component.gd" id="16_b2kln"]
+[ext_resource type="PackedScene" path="res://entities/projectile/projectile.tscn" id="17_b2kln"]
+[ext_resource type="Resource" uid="uid://cqmb8f2dmjcg3" path="res://entities/projectile/stone.tres" id="17_we0b7"]
+
+[sub_resource type="RectangleShape2D" id="body_shape"]
+size = Vector2(14, 28)
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_l48rg"]
+load_path = "res://.godot/imported/based.png-fe1fb87e310975b19721e15eae5c7c6e.ctex"
+
+[sub_resource type="RectangleShape2D" id="hit_shape"]
+size = Vector2(26, 24)
+
+[sub_resource type="RectangleShape2D" id="hurt_shape"]
+size = Vector2(14, 28)
+
+[node name="Player" type="CharacterBody2D" unique_id=1274089227]
+collision_layer = 2
+script = ExtResource("1_26q78")
+stats = ExtResource("2_we0b7")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1435026753]
+position = Vector2(0, -14)
+shape = SubResource("body_shape")
+
+[node name="Visual" type="Node2D" parent="." unique_id=1807725101]
+
+[node name="Sprite2D" type="Sprite2D" parent="Visual" unique_id=2078393505]
+texture = SubResource("CompressedTexture2D_l48rg")
+offset = Vector2(0, -16)
+
+[node name="Health" type="Node" parent="." unique_id=286975665]
+script = ExtResource("4_7thud")
+max_health = 100
+
+[node name="AttackComponent" type="Node2D" parent="." unique_id=389030333 node_paths=PackedStringArray("vfx")]
+script = ExtResource("5_a1qjk")
+attack_data = ExtResource("7_wvtmh")
+vfx = NodePath("SlashFX")
+
+[node name="Hitbox" type="Area2D" parent="AttackComponent" unique_id=2135191965]
+position = Vector2(22, -16)
+scale = Vector2(0.5, 0.5)
+script = ExtResource("6_j3ovn")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="AttackComponent/Hitbox" unique_id=998711320]
+shape = SubResource("hit_shape")
+
+[node name="SlashFX" type="Sprite2D" parent="AttackComponent" unique_id=734150383]
+position = Vector2(22, -16)
+scale = Vector2(0.5, 0.5)
+texture = ExtResource("7_afbqv")
+
+[node name="Hurtbox" type="Area2D" parent="." unique_id=1263411882]
+position = Vector2(0, -14)
+script = ExtResource("8_gx6sm")
+team = &"player"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox" unique_id=426946419]
+shape = SubResource("hurt_shape")
+
+[node name="StateMachine" type="Node" parent="." unique_id=179379325 node_paths=PackedStringArray("initial_state")]
+script = ExtResource("9_afbqv")
+initial_state = NodePath("Idle")
+metadata/_custom_type_script = "uid://q03686l0lng5"
+
+[node name="Run" type="Node" parent="StateMachine" unique_id=816684368]
+script = ExtResource("10_gx6sm")
+
+[node name="Jump" type="Node" parent="StateMachine" unique_id=628285147]
+script = ExtResource("11_yqrof")
+
+[node name="Idle" type="Node" parent="StateMachine" unique_id=703603256]
+script = ExtResource("12_3wlsy")
+
+[node name="Fall" type="Node" parent="StateMachine" unique_id=739126503]
+script = ExtResource("13_b2kln")
+
+[node name="Attack" type="Node" parent="StateMachine" unique_id=1749506378]
+script = ExtResource("14_we0b7")
+
+[node name="Dash" type="Node" parent="StateMachine" unique_id=1061338682]
+script = ExtResource("15_we0b7")
+
+[node name="AmmoComponent" type="Node" parent="." unique_id=1871776644]
+script = ExtResource("15_3wlsy")
+
+[node name="RangedAttackComponent" type="Node" parent="." unique_id=43613829 node_paths=PackedStringArray("ammo")]
+script = ExtResource("16_b2kln")
+projectile_scene = ExtResource("17_b2kln")
+projectile_data = ExtResource("17_we0b7")
+ammo = NodePath("../AmmoComponent")
+
+
+===== entities\player\player_slash.tres =====
+
+[gd_resource type="Resource" script_class="AttackData" format=3 uid="uid://drrkytlhc3px2"]
+
+[ext_resource type="Script" uid="uid://cqpda0j2kknbk" path="res://data/attack_data.gd" id="1_ib388"]
+
+[resource]
+script = ExtResource("1_ib388")
+active_frames = 6
+recovery_frames = 10
+ground_move_multiplier = 0.611
+metadata/_custom_type_script = "uid://cqpda0j2kknbk"
+
+
+===== entities\player\player_state.gd =====
+
+# entities/player/player_state.gd
+class_name PlayerState
+extends Node
+## Classe base abstrata para todos os estados do jogador (Player).
+
+var player: CharacterBody2D
+var state_machine: Node
+
+func enter() -> void:
+	pass
+
+func exit() -> void:
+	pass
+
+func process_input(_event: InputEvent) -> void:
+	pass
+
+func physics_update(_delta: float) -> void:
+	pass
+
+
+===== entities\player\player_stats.gd =====
+
+# data/player/PlayerStats.gd
+class_name PlayerStats
+extends Resource
+## Recurso de dados que centraliza todos os atributos e parÃ¢metros de movimentaÃ§Ã£o do Player.
+## Mudar os valores neste recurso altera o feeling do jogo sem tocar em nenhuma linha de cÃ³digo.
+
+@export_group("MovimentaÃ§Ã£o Horizontal")
+@export var move_speed: float = 120.0
+
+@export_group("Pulo e Gravidade")
+@export var jump_velocity: float = -260.0
+@export var gravity: float = 750.0
+@export var max_fall_speed: float = 300.0
+@export var jump_cut_multiplier: float = 0.5
+
+@export_group("AssistÃªncias de Jogabilidade (Game Feel)")
+@export var coyote_time: float = 0.10
+@export var jump_buffer: float = 0.10
+
+@export var fall_gravity_multiplier: float = 1.0
+
+@export_group("Dash")
+@export var dash_distance: float = 96.0
+@export var dash_duration: float = 0.20
+## Conta desde o inÃ­cio do dash (inclui a duraÃ§Ã£o dele).
+@export var dash_cooldown: float = 0.6
+@export var max_air_dashes: int = 1
+## 0 = dash reto, sem cair durante ele.
+@export var dash_gravity_multiplier: float = 0.0
+
+
+===== entities\player\player_stats.tres =====
+
+[gd_resource type="Resource" script_class="PlayerStats" format=3 uid="uid://723psfxn3m3e"]
+
+[ext_resource type="Script" uid="uid://b2ef0w7517ktb" path="res://entities/player/player_stats.gd" id="1_01d8e"]
+
+[resource]
+script = ExtResource("1_01d8e")
+max_health = 100
+metadata/_custom_type_script = "uid://b2ef0w7517ktb"
+
+
+===== entities\player\state_machine.gd =====
+
+# entities/player/state_machine.gd
+class_name StateMachine
+extends Node
+## Gerenciador da MÃ¡quina de Estados do Player.
+
+@export var initial_state: PlayerState
+var current_state: PlayerState
+var states: Dictionary = {}
+
+func init(player: CharacterBody2D) -> void:
+	for child in get_children():
+		if child is PlayerState:
+			states[child.name.to_lower()] = child
+			child.player = player
+			child.state_machine = self
+	
+	if initial_state:
+		current_state = initial_state
+		current_state.enter()
+
+func _unhandled_input(event: InputEvent) -> void:
+	if current_state:
+		current_state.process_input(event)
+
+func _physics_process(delta: float) -> void:
+	if current_state:
+		current_state.physics_update(delta)
+
+func transition_to(target_state_name: String) -> void:
+	var key: String = target_state_name.to_lower()
+	if not states.has(key):
+		push_warning("StateMachine: Estado nÃ£o encontrado -> " + target_state_name)
+		return
+	
+	if current_state:
+		current_state.exit()
+	
+	current_state = states[key]
+	current_state.enter()
+
+
+===== entities\projectile\projectile.gd =====
+
+# entities/projectiles/projectile.gd
+class_name Projectile
+extends Area2D
+## ProjÃ©til reto genÃ©rico. Quem dispara chama setup() logo apÃ³s adicionÃ¡-lo Ã  cena.
+## Some ao acertar uma Hurtbox, ao bater no cenÃ¡rio ou quando o tempo de vida acaba.
+## Estrutura da cena: Projectile (Area2D, mask = camada do cenÃ¡rio) com os filhos
+## Sprite2D e Hitbox (com CollisionShape2D, configurada como a Hitbox do Player).
+## Obs.: acima de ~600 px/s um alvo muito fino pode ser atravessado entre dois frames.
+
+@onready var hitbox: Hitbox = $Hitbox as Hitbox
+@onready var sprite: Sprite2D = $Sprite2D
+
+var _velocity: Vector2 = Vector2.ZERO
+var _life: float = 1.0
+
+
+func _ready() -> void:
+	body_entered.connect(_on_body_entered)
+	hitbox.hit_landed.connect(func(_h: Hurtbox) -> void: queue_free())
+	hitbox.activate()
+
+
+func setup(data: ProjectileData, direction: int, shooter: CharacterBody2D) -> void:
+	_velocity = Vector2(direction * data.speed, 0.0)
+	_life = data.lifetime
+	hitbox.damage = data.damage
+	hitbox.source = shooter  # a Hitbox usa isso para nÃ£o acertar quem atirou
+	# Espelha o projÃ©til inteiro (sprite, formas e a direÃ§Ã£o do knockback da Hitbox).
+	scale.x = float(direction)
+
+
+func _physics_process(delta: float) -> void:
+	global_position += _velocity * delta
+	_life -= delta
+	if _life <= 0.0:
+		queue_free()
+
+
+func _on_body_entered(_body: Node2D) -> void:
+	queue_free()
+
+
+===== entities\projectile\projectile.tscn =====
+
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://entities/projectile/projectile.gd" id="1"]
+[ext_resource type="Script" path="res://components/hitbox.gd" id="2"]
+[ext_resource type="Texture2D" path="res://icon.svg" id="3"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_body"]
+radius = 4.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_stone"]
+radius = 4.0
+
+[node name="Projectile" type="Area2D"]
+collision_layer = 0
+collision_mask = 1
+script = ExtResource("1")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_body")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+scale = Vector2(0.1, 0.1)
+texture = ExtResource("3")
+
+[node name="Hitbox" type="Area2D" parent="."]
+script = ExtResource("2")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox"]
+shape = SubResource("CircleShape2D_stone")
+
+
+===== entities\projectile\stone.tres =====
+
+[gd_resource type="Resource" script_class="ProjectileData" format=3 uid="uid://cqmb8f2dmjcg3"]
+
+[ext_resource type="Script" uid="uid://dyg5ax1nobbjq" path="res://data/projectile_data.gd" id="1_eu5jc"]
+
+[resource]
+script = ExtResource("1_eu5jc")
+
+
+===== map\default_map_theme.tres =====
+
+[gd_resource type="Resource" script_class="MapTheme" format=3]
+
+[ext_resource type="Script" uid="uid://c0qglwb7613gp" path="res://map/map_theme.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://5cqox2lvubf7" path="res://map/art/background.png" id="2"]
+[ext_resource type="Texture2D" uid="uid://dwijeua8sbq47" path="res://map/art/player_marker.png" id="3"]
+[ext_resource type="Texture2D" uid="uid://byvh24428jhls" path="res://map/art/icon_combate.png" id="4"]
+[ext_resource type="Texture2D" uid="uid://dg7mxirm2iihx" path="res://map/art/icon_parkour.png" id="5"]
+[ext_resource type="Texture2D" uid="uid://dewix5dbypuno" path="res://map/art/icon_miniboss.png" id="6"]
+[ext_resource type="Texture2D" uid="uid://blpivhkopiovu" path="res://map/art/icon_mercadora.png" id="7"]
+[ext_resource type="Texture2D" uid="uid://bsqaj60jxtwtq" path="res://map/art/icon_descanso.png" id="8"]
+[ext_resource type="Texture2D" uid="uid://di7ivb6y5gt60" path="res://map/art/icon_evento.png" id="9"]
+[ext_resource type="Texture2D" uid="uid://d3dfc27w7agh8" path="res://map/art/icon_midboss.png" id="10"]
+[ext_resource type="Texture2D" uid="uid://debx4lpim485p" path="res://map/art/icon_boss.png" id="11"]
+
+[resource]
+script = ExtResource("1")
+background = ExtResource("2")
+player_marker = ExtResource("3")
+icon_combate = ExtResource("4")
+icon_parkour = ExtResource("5")
+icon_miniboss = ExtResource("6")
+icon_mercadora = ExtResource("7")
+icon_descanso = ExtResource("8")
+icon_evento = ExtResource("9")
+icon_midboss = ExtResource("10")
+icon_boss = ExtResource("11")
+
+
+===== map\map_layout.gd =====
+
+class_name MapLayout
+extends RefCounted
+## O MAPA HARDCODED. Para mudar o mapa, edite sÃ³ este arquivo.
+##
+## pos = (x, y) normalizados de 0 a 1 dentro da Ã¡rea do mapa
+##       (x: 0 = esquerda, 1 = direita | y: 0 = topo, 1 = base).
+## O mapa Ã© lido de baixo (inÃ­cio) para cima (BoitatÃ¡), como no GDD.
+## Os ids sÃ£o livres; sÃ³ precisam ser Ãºnicos.
+
+enum Kind { COMBATE, PARKOUR, MINIBOSS, MERCADORA, DESCANSO, EVENTO, MID_BOSS, BOSS }
+
+## Nomes que aparecem na legenda.
+const KIND_NAMES := {
+	Kind.COMBATE: "Combate",
+	Kind.PARKOUR: "Parkour",
+	Kind.MINIBOSS: "Miniboss",
+	Kind.MERCADORA: "Mercadora",
+	Kind.DESCANSO: "Descanso",
+	Kind.EVENTO: "Evento",
+	Kind.MID_BOSS: "Curupira",
+	Kind.BOSS: "BoitatÃ¡",
+}
+
+## Tamanho relativo do Ã­cone (padrÃ£o 1.0). Os chefes sÃ£o maiores.
+const KIND_SCALE := {
+	Kind.MID_BOSS: 1.4,
+	Kind.BOSS: 1.7,
+}
+
+## De onde o Valtair "sai" antes de escolher o primeiro nÃ³.
+const ORIGIN := Vector2(0.5, 1.0)
+
+## NÃ³s que jÃ¡ comeÃ§am disponÃ­veis para escolher.
+const START := ["L0_A", "L0_B", "L0_C"]
+
+const NODES := {
+	# --- Camada 0 (inÃ­cio) ---
+	"L0_A": {"kind": Kind.COMBATE, "pos": Vector2(0.20, 0.90)},
+	"L0_B": {"kind": Kind.COMBATE, "pos": Vector2(0.50, 0.90)},
+	"L0_C": {"kind": Kind.PARKOUR, "pos": Vector2(0.80, 0.90)},
+	# --- Camada 1 ---
+	"L1_A": {"kind": Kind.EVENTO, "pos": Vector2(0.12, 0.79)},
+	"L1_B": {"kind": Kind.COMBATE, "pos": Vector2(0.37, 0.79)},
+	"L1_C": {"kind": Kind.COMBATE, "pos": Vector2(0.63, 0.79)},
+	"L1_D": {"kind": Kind.PARKOUR, "pos": Vector2(0.88, 0.79)},
+	# --- Camada 2 ---
+	"L2_A": {"kind": Kind.COMBATE, "pos": Vector2(0.20, 0.68)},
+	"L2_B": {"kind": Kind.MINIBOSS, "pos": Vector2(0.50, 0.68)},
+	"L2_C": {"kind": Kind.EVENTO, "pos": Vector2(0.80, 0.68)},
+	# --- Camada 3 (preparo para o Curupira) ---
+	"L3_A": {"kind": Kind.MERCADORA, "pos": Vector2(0.33, 0.58)},
+	"L3_B": {"kind": Kind.DESCANSO, "pos": Vector2(0.67, 0.58)},
+	# --- Camada 4 (meio do mapa) ---
+	"L4_A": {"kind": Kind.MID_BOSS, "pos": Vector2(0.50, 0.47)},
+	# --- Camada 5 ---
+	"L5_A": {"kind": Kind.COMBATE, "pos": Vector2(0.20, 0.36)},
+	"L5_B": {"kind": Kind.PARKOUR, "pos": Vector2(0.50, 0.36)},
+	"L5_C": {"kind": Kind.COMBATE, "pos": Vector2(0.80, 0.36)},
+	# --- Camada 6 ---
+	"L6_A": {"kind": Kind.EVENTO, "pos": Vector2(0.20, 0.26)},
+	"L6_B": {"kind": Kind.MINIBOSS, "pos": Vector2(0.50, 0.26)},
+	"L6_C": {"kind": Kind.COMBATE, "pos": Vector2(0.80, 0.26)},
+	# --- Camada 7 (preparo para o BoitatÃ¡) ---
+	"L7_A": {"kind": Kind.MERCADORA, "pos": Vector2(0.33, 0.15)},
+	"L7_B": {"kind": Kind.DESCANSO, "pos": Vector2(0.67, 0.15)},
+	# --- Camada 8 (chefe final) ---
+	"L8_A": {"kind": Kind.BOSS, "pos": Vector2(0.50, 0.04)},
+}
+
+## Caminhos: [de, para]. Sempre da camada de baixo para a de cima.
+const EDGES := [
+	["L0_A", "L1_A"], ["L0_A", "L1_B"], ["L0_B", "L1_B"], ["L0_B", "L1_C"], ["L0_C", "L1_C"], ["L0_C", "L1_D"],
+	["L1_A", "L2_A"], ["L1_B", "L2_A"], ["L1_B", "L2_B"], ["L1_C", "L2_B"], ["L1_C", "L2_C"], ["L1_D", "L2_C"],
+	["L2_A", "L3_A"], ["L2_B", "L3_A"], ["L2_B", "L3_B"], ["L2_C", "L3_B"],
+	["L3_A", "L4_A"], ["L3_B", "L4_A"],
+	["L4_A", "L5_A"], ["L4_A", "L5_B"], ["L4_A", "L5_C"],
+	["L5_A", "L6_A"], ["L5_A", "L6_B"], ["L5_B", "L6_B"], ["L5_C", "L6_B"], ["L5_C", "L6_C"],
+	["L6_A", "L7_A"], ["L6_B", "L7_A"], ["L6_B", "L7_B"], ["L6_C", "L7_B"],
+	["L7_A", "L8_A"], ["L7_B", "L8_A"],
+]
+
+
+===== map\map_node_view.gd =====
+
+class_name MapNodeView
+extends Control
+## Um nÃ³ do mapa na tela: desenha o Ã­cone, o anel de estado e recebe o clique.
+
+signal chosen(view: MapNodeView)
+
+enum State {
+	LOCKED,     ## ainda inalcanÃ§Ã¡vel (escurecido)
+	AVAILABLE,  ## pode ser escolhido agora (anel dourado pulsando)
+	VISITED,    ## jÃ¡ passou por aqui
+	CURRENT,    ## onde o Valtair estÃ¡
+}
+
+var id: String = ""
+var kind: int = 0
+var icon: Texture2D
+var icon_diameter: float = 22.0
+var static_mode: bool = false  ## true = sÃ³ desenho (usado na legenda), sem clique/estado
+
+var state: State = State.LOCKED:
+	set(value):
+		state = value
+		mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if (state == State.AVAILABLE and not static_mode) else Control.CURSOR_ARROW
+		queue_redraw()
+
+var _hover: bool = false
+var _t: float = 0.0
+
+
+func setup(p_id: String, p_kind: int, p_icon: Texture2D, diameter: float, pixel_art: bool, p_static: bool = false) -> void:
+	id = p_id
+	kind = p_kind
+	icon = p_icon
+	icon_diameter = diameter
+	static_mode = p_static
+	size = Vector2.ONE * (diameter + 12.0)
+	custom_minimum_size = size
+	pivot_offset = size * 0.5
+	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST if pixel_art else CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	mouse_filter = Control.MOUSE_FILTER_IGNORE if static_mode else Control.MOUSE_FILTER_STOP
+	if not static_mode:
+		mouse_entered.connect(func() -> void: _hover = true; queue_redraw())
+		mouse_exited.connect(func() -> void: _hover = false; queue_redraw())
+	queue_redraw()
+
+
+func _process(delta: float) -> void:
+	if state == State.AVAILABLE and not static_mode:
+		_t += delta
+		queue_redraw()
+
+
+func _gui_input(event: InputEvent) -> void:
+	if static_mode or state != State.AVAILABLE:
+		return
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		chosen.emit(self)
+		accept_event()
+
+
+func _draw() -> void:
+	var c := size * 0.5
+	var r := icon_diameter * 0.5
+
+	if not static_mode:
+		match state:
+			State.AVAILABLE:
+				var pulse := 0.5 + 0.5 * sin(_t * 4.0)
+				if _hover:
+					draw_circle(c, r + 4.0, Color(1, 1, 1, 0.15))
+				draw_arc(c, r + 3.0 + pulse * 1.5, 0.0, TAU, 32, Color(1.0, 0.88, 0.45, 0.55 + 0.45 * pulse), 1.5, true)
+			State.CURRENT:
+				draw_arc(c, r + 3.0, 0.0, TAU, 32, Color(1.0, 0.85, 0.3, 1.0), 2.0, true)
+			State.VISITED:
+				draw_arc(c, r + 2.0, 0.0, TAU, 32, Color(0.55, 0.9, 0.6, 0.8), 1.0, true)
+
+	# Fundo escuro atrÃ¡s do Ã­cone: garante leitura sobre qualquer imagem de fundo.
+	draw_circle(c, r + 1.0, Color(0.04, 0.07, 0.05, 0.85))
+
+	var tint := Color.WHITE
+	if not static_mode:
+		match state:
+			State.LOCKED: tint = Color(0.45, 0.45, 0.45, 1.0)
+			State.VISITED: tint = Color(0.6, 0.75, 0.6, 1.0)
+
+	if icon != null:
+		# Encaixa a imagem dentro do cÃ­rculo mantendo a proporÃ§Ã£o.
+		var ts := icon.get_size()
+		var k := minf(icon_diameter / ts.x, icon_diameter / ts.y)
+		var sz := ts * k
+		draw_texture_rect(icon, Rect2(c - sz * 0.5, sz), false, tint)
+	else:
+		draw_circle(c, r, MapTheme.fallback_color(kind) * tint)
+		var f := ThemeDB.fallback_font
+		var letter := MapTheme.fallback_letter(kind)
+		var fs := int(icon_diameter * 0.5)
+		draw_string(f, Vector2(0.0, c.y + fs * 0.35), letter, HORIZONTAL_ALIGNMENT_CENTER, size.x, fs, Color(1, 1, 1, tint.a))
+
+
+===== map\map_screen.gd =====
+
+class_name MapScreen
+extends Control
+## Tela do mapa de nÃ³s. LÃª o layout de MapLayout e as imagens de MapTheme.
+##
+## InteraÃ§Ã£o (Ãºtil para a apresentaÃ§Ã£o):
+##   clique num nÃ³ dourado = avanÃ§a | R = reinicia | L = legenda | H = dicas | P = salva PNG
+##
+## Para ligar ao jogo de verdade depois, conecte o sinal `node_chosen(id, kind)`.
+
+signal node_chosen(id: String, kind: int)
+signal route_finished  ## o jogador escolheu um nÃ³ sem saÃ­da (o BoitatÃ¡)
+
+@export var map_theme: MapTheme
+## RetÃ¢ngulo (normalizado 0..1 na tela) onde a Ã¡rvore Ã© desenhada.
+## O espaÃ§o Ã  esquerda fica livre para a legenda.
+@export var map_area: Rect2 = Rect2(0.30, 0.06, 0.66, 0.88)
+@export var show_legend: bool = true:
+	set(value):
+		show_legend = value
+		if _legend:
+			_legend.visible = value
+@export var show_hints: bool = true:
+	set(value):
+		show_hints = value
+		if _hints:
+			_hints.visible = value
+
+var _views: Dictionary = {}        # id -> MapNodeView
+var _children_of: Dictionary = {}  # id -> Array[String]
+var _walked: Dictionary = {}       # "de>para" -> true (caminho jÃ¡ percorrido)
+var _current_id: String = ""       # "" = ainda na origem
+var _lines: Control
+var _marker: Control
+var _legend: Control
+var _hints: Label
+var _marker_base: Vector2 = Vector2.ZERO
+var _t: float = 0.0
+
+
+func _ready() -> void:
+	if map_theme == null:
+		map_theme = MapTheme.new()  # tema vazio: tudo vira bolinha colorida
+
+	_build_background()
+	_lines = Control.new()
+	_lines.name = "Lines"
+	_lines.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_lines.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_lines.draw.connect(_draw_lines)
+	add_child(_lines)
+
+	_build_graph()
+	_build_views()
+	_build_marker()
+	_build_legend()
+	_build_hints()
+
+	resized.connect(_layout)
+	reset()
+
+
+func reset() -> void:
+	_current_id = ""
+	_walked.clear()
+	for id: String in _views:
+		(_views[id] as MapNodeView).state = MapNodeView.State.LOCKED
+	for id: String in MapLayout.START:
+		(_views[id] as MapNodeView).state = MapNodeView.State.AVAILABLE
+	_layout()
+
+
+func current_id() -> String:
+	return _current_id
+
+
+func available_ids() -> Array[String]:
+	var out: Array[String] = []
+	for id: String in _views:
+		if (_views[id] as MapNodeView).state == MapNodeView.State.AVAILABLE:
+			out.append(id)
+	return out
+
+
+func choose(id: String) -> void:
+	## Escolhe um nÃ³ por cÃ³digo (igual a clicar nele).
+	if _views.has(id):
+		_on_view_chosen(_views[id])
+
+
+func save_screenshot(path: String = "user://mapa.png") -> void:
+	var img := get_viewport().get_texture().get_image()
+	img.save_png(path)
+	print("Screenshot salvo em: ", ProjectSettings.globalize_path(path))
+
+
+func _process(delta: float) -> void:
+	_t += delta
+	if _marker:
+		_marker.position = _marker_base + Vector2(0.0, sin(_t * 3.0) * 1.5)
+
+
+func _unhandled_key_input(event: InputEvent) -> void:
+	var key := event as InputEventKey
+	if key == null or not key.pressed or key.echo:
+		return
+	match key.keycode:
+		KEY_R: reset()
+		KEY_L: show_legend = not show_legend
+		KEY_H: show_hints = not show_hints
+		KEY_P: save_screenshot()
+
+
+# ---------------------------------------------------------------- construÃ§Ã£o
+
+func _build_background() -> void:
+	var solid := ColorRect.new()
+	solid.name = "BackgroundColor"
+	solid.color = map_theme.background_color
+	solid.set_anchors_preset(Control.PRESET_FULL_RECT)
+	solid.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(solid)
+	if map_theme.background != null:
+		var tex := TextureRect.new()
+		tex.name = "Background"
+		tex.texture = map_theme.background
+		tex.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		tex.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED  # cobre a tela sem distorcer
+		tex.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST if map_theme.pixel_art else CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+		tex.set_anchors_preset(Control.PRESET_FULL_RECT)
+		tex.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(tex)
+
+
+func _build_graph() -> void:
+	for id: String in MapLayout.NODES:
+		_children_of[id] = [] as Array[String]
+	for e: Array in MapLayout.EDGES:
+		(_children_of[e[0]] as Array[String]).append(e[1])
+
+
+func _build_views() -> void:
+	for id: String in MapLayout.NODES:
+		var data: Dictionary = MapLayout.NODES[id]
+		var kind: int = data["kind"]
+		var diameter := map_theme.icon_size * float(MapLayout.KIND_SCALE.get(kind, 1.0))
+		var v := MapNodeView.new()
+		v.name = id
+		v.setup(id, kind, map_theme.icon_for(kind), diameter, map_theme.pixel_art)
+		v.chosen.connect(_on_view_chosen)
+		add_child(v)
+		_views[id] = v
+
+
+func _build_marker() -> void:
+	_marker = Control.new()
+	_marker.name = "PlayerMarker"
+	_marker.size = map_theme.player_marker_size
+	_marker.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_marker.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST if map_theme.pixel_art else CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	_marker.draw.connect(func() -> void:
+		if map_theme.player_marker != null:
+			_marker.draw_texture_rect(map_theme.player_marker, Rect2(Vector2.ZERO, _marker.size), false)
+		else:
+			_marker.draw_rect(Rect2(Vector2.ZERO, _marker.size), Color(0.2, 0.55, 0.9))
+	)
+	add_child(_marker)
+
+
+func _build_legend() -> void:
+	var panel := PanelContainer.new()
+	panel.name = "Legend"
+	panel.position = Vector2(10, 10)
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.03, 0.06, 0.04, 0.72)
+	sb.set_corner_radius_all(4)
+	sb.set_content_margin_all(8)
+	panel.add_theme_stylebox_override("panel", sb)
+
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 2)
+	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.add_child(box)
+
+	var title := Label.new()
+	title.text = "LEGENDA"
+	title.add_theme_font_size_override("font_size", 10)
+	title.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
+	box.add_child(title)
+
+	for kind: int in MapLayout.KIND_NAMES:
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 6)
+		row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var icon_view := MapNodeView.new()
+		icon_view.setup("legend_%d" % kind, kind, map_theme.icon_for(kind), 16.0, map_theme.pixel_art, true)
+		row.add_child(icon_view)
+		var label := Label.new()
+		label.text = MapLayout.KIND_NAMES[kind]
+		label.add_theme_font_size_override("font_size", 10)
+		label.add_theme_color_override("font_color", Color(0.93, 0.95, 0.9))
+		label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(label)
+		box.add_child(row)
+
+	panel.visible = show_legend
+	_legend = panel
+	add_child(panel)
+
+
+func _build_hints() -> void:
+	_hints = Label.new()
+	_hints.name = "Hints"
+	_hints.text = "Clique num nÃ³ dourado  |  R reinicia  |  L legenda  |  H esconde dicas  |  P salva PNG"
+	_hints.add_theme_font_size_override("font_size", 8)
+	_hints.add_theme_color_override("font_color", Color(1, 1, 1, 0.55))
+	_hints.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+	_hints.position = Vector2(10, -14)
+	_hints.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_hints.visible = show_hints
+	add_child(_hints)
+
+
+# ---------------------------------------------------------------- layout
+
+func _to_screen(p: Vector2) -> Vector2:
+	var area_pos := map_area.position * size
+	var area_size := map_area.size * size
+	return area_pos + p * area_size
+
+
+func _center_of(id: String) -> Vector2:
+	var v: MapNodeView = _views[id]
+	return v.position + v.size * 0.5
+
+
+func _layout() -> void:
+	for id: String in _views:
+		var v: MapNodeView = _views[id]
+		var p: Vector2 = MapLayout.NODES[id]["pos"]
+		v.position = _to_screen(p) - v.size * 0.5
+	_place_marker()
+	if _lines:
+		_lines.queue_redraw()
+
+
+func _place_marker() -> void:
+	if _marker == null:
+		return
+	var ms := _marker.size
+	if _current_id == "":
+		_marker_base = _to_screen(MapLayout.ORIGIN) - Vector2(ms.x * 0.5, ms.y)
+	else:
+		# Fica ao lado esquerdo do nÃ³ atual, para nÃ£o cobrir os caminhos Ã  frente.
+		var v: MapNodeView = _views[_current_id]
+		var c := _center_of(_current_id)
+		_marker_base = Vector2(c.x - v.icon_diameter * 0.5 - ms.x - 3.0, c.y - ms.y * 0.6)
+	_marker.position = _marker_base
+
+
+# ---------------------------------------------------------------- linhas
+
+func _draw_lines() -> void:
+	var origin := _to_screen(MapLayout.ORIGIN)
+	for id: String in MapLayout.START:
+		_draw_edge("", id, origin, _center_of(id))
+	for e: Array in MapLayout.EDGES:
+		_draw_edge(e[0], e[1], _center_of(e[0]), _center_of(e[1]))
+
+
+func _draw_edge(from_id: String, to_id: String, a: Vector2, b: Vector2) -> void:
+	var th := map_theme
+	if _walked.has(from_id + ">" + to_id):
+		_lines.draw_line(a, b, th.line_color_walked, th.line_width + 0.5, true)
+	elif _current_id == from_id and (_views[to_id] as MapNodeView).state == MapNodeView.State.AVAILABLE:
+		_lines.draw_dashed_line(a, b, th.line_color_available, th.line_width + 0.5, 4.0, true, true)
+	else:
+		_lines.draw_dashed_line(a, b, th.line_color, th.line_width, 3.0, true, true)
+
+
+# ---------------------------------------------------------------- lÃ³gica de escolha
+
+func _on_view_chosen(view: MapNodeView) -> void:
+	if view.state != MapNodeView.State.AVAILABLE:
+		return
+
+	# Os outros nÃ³s disponÃ­veis ficam bloqueados: nÃ£o dÃ¡ para voltar atrÃ¡s.
+	for id: String in _views:
+		var other: MapNodeView = _views[id]
+		if other.state == MapNodeView.State.AVAILABLE:
+			other.state = MapNodeView.State.LOCKED
+	if _current_id != "":
+		(_views[_current_id] as MapNodeView).state = MapNodeView.State.VISITED
+
+	_walked[_current_id + ">" + view.id] = true
+	_current_id = view.id
+	view.state = MapNodeView.State.CURRENT
+
+	var next: Array[String] = _children_of[view.id]
+	for child in next:
+		(_views[child] as MapNodeView).state = MapNodeView.State.AVAILABLE
+
+	_place_marker()
+	_lines.queue_redraw()
+	node_chosen.emit(view.id, view.kind)
+	if next.is_empty():
+		route_finished.emit()
+
+
+===== map\map_screen.tscn =====
+
+[gd_scene format=3]
+
+[ext_resource type="Script" uid="uid://chfdpnu5ufngj" path="res://map/map_screen.gd" id="1"]
+[ext_resource type="Resource" path="res://map/default_map_theme.tres" id="2"]
+
+[node name="MapScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1")
+map_theme = ExtResource("2")
+
+
+===== map\map_theme.gd =====
+
+class_name MapTheme
+extends Resource
+## TODAS as imagens e cores do mapa ficam aqui.
+## Para trocar uma imagem: abra `default_map_theme.tres` e arraste o seu arquivo
+## para o slot correspondente no Inspector. (Ou sobrescreva o arquivo em `art/`
+## mantendo o mesmo nome.) Slot vazio = o mapa desenha uma bolinha colorida no lugar.
+
+@export_group("Imagens")
+@export var background: Texture2D
+@export var player_marker: Texture2D
+
+@export_subgroup("Ãcones dos nÃ³s")
+@export var icon_combate: Texture2D      ## Pegada
+@export var icon_parkour: Texture2D      ## CipÃ³
+@export var icon_miniboss: Texture2D     ## Caveira (Saci / Lobisomem)
+@export var icon_mercadora: Texture2D    ## Caipora
+@export var icon_descanso: Texture2D     ## Fogueira
+@export var icon_evento: Texture2D       ## InterrogaÃ§Ã£o
+@export var icon_midboss: Texture2D      ## Rastro (Curupira)
+@export var icon_boss: Texture2D         ## Fogo (BoitatÃ¡)
+
+@export_group("Tamanhos")
+## DiÃ¢metro do Ã­cone padrÃ£o, em pixels da resoluÃ§Ã£o base do jogo.
+@export var icon_size: float = 22.0
+@export var player_marker_size: Vector2 = Vector2(14, 21)
+
+@export_group("Estilo")
+## Marque se as imagens sÃ£o pixel art. Desmarque para imagens grandes/suaves
+## (reduzir imagem grande com "nearest" fica serrilhado).
+@export var pixel_art: bool = true
+@export var background_color: Color = Color(0.05, 0.1, 0.08, 1)
+@export var line_color: Color = Color(0.75, 0.85, 0.7, 0.28)
+@export var line_color_available: Color = Color(1.0, 0.88, 0.45, 0.9)
+@export var line_color_walked: Color = Color(0.55, 0.9, 0.6, 0.95)
+@export var line_width: float = 1.5
+
+
+func icon_for(kind: int) -> Texture2D:
+	match kind:
+		MapLayout.Kind.COMBATE: return icon_combate
+		MapLayout.Kind.PARKOUR: return icon_parkour
+		MapLayout.Kind.MINIBOSS: return icon_miniboss
+		MapLayout.Kind.MERCADORA: return icon_mercadora
+		MapLayout.Kind.DESCANSO: return icon_descanso
+		MapLayout.Kind.EVENTO: return icon_evento
+		MapLayout.Kind.MID_BOSS: return icon_midboss
+		MapLayout.Kind.BOSS: return icon_boss
+	return null
+
+
+## Cor e letra usadas quando o slot da imagem estÃ¡ vazio.
+static func fallback_color(kind: int) -> Color:
+	match kind:
+		MapLayout.Kind.COMBATE: return Color(0.69, 0.23, 0.18)
+		MapLayout.Kind.PARKOUR: return Color(0.24, 0.51, 0.27)
+		MapLayout.Kind.MINIBOSS: return Color(0.42, 0.27, 0.59)
+		MapLayout.Kind.MERCADORA: return Color(0.77, 0.59, 0.16)
+		MapLayout.Kind.DESCANSO: return Color(0.77, 0.43, 0.16)
+		MapLayout.Kind.EVENTO: return Color(0.2, 0.39, 0.67)
+		MapLayout.Kind.MID_BOSS: return Color(0.59, 0.27, 0.16)
+		MapLayout.Kind.BOSS: return Color(0.75, 0.16, 0.12)
+	return Color.GRAY
+
+
+static func fallback_letter(kind: int) -> String:
+	match kind:
+		MapLayout.Kind.COMBATE: return "C"
+		MapLayout.Kind.PARKOUR: return "P"
+		MapLayout.Kind.MINIBOSS: return "M"
+		MapLayout.Kind.MERCADORA: return "$"
+		MapLayout.Kind.DESCANSO: return "D"
+		MapLayout.Kind.EVENTO: return "?"
+		MapLayout.Kind.MID_BOSS: return "CU"
+		MapLayout.Kind.BOSS: return "B"
+	return "?"
+
+
+===== ui\hud.gd =====
+
+# ui/hud.gd
+class_name Hud
+extends CanvasLayer
+## HUD do jogo. SÃ³ escuta o EventBus; nunca referencia o Player diretamente.
+## Assim ele funciona em qualquer sala, nÃ£o importa de onde o Player veio.
+##
+## Funciona de dois jeitos: se a cena tiver nÃ³s Ãºnicos chamados HealthBar e AmmoRow
+## (veja hud.tscn), usa esses nÃ³s e dÃ¡ para estilizÃ¡-los no editor. Se nÃ£o tiver,
+## monta a interface sozinho. Assim um simples CanvasLayer com este script jÃ¡ basta.
+
+## Texturas opcionais para as pedras. Sem elas, o HUD desenha quadradinhos de placeholder.
+@export var stone_full: Texture2D
+@export var stone_empty: Texture2D
+
+const PLACEHOLDER_SIZE: Vector2 = Vector2(6.0, 6.0)
+const COLOR_FULL: Color = Color(0.85, 0.8, 0.7)
+const COLOR_EMPTY: Color = Color(0.25, 0.25, 0.25)
+
+var health_bar: ProgressBar
+var ammo_row: HBoxContainer
+
+
+func _ready() -> void:
+	health_bar = get_node_or_null("%HealthBar") as ProgressBar
+	ammo_row = get_node_or_null("%AmmoRow") as HBoxContainer
+	if health_bar == null or ammo_row == null:
+		_build_ui()
+
+	EventBus.player_health_changed.connect(_on_health_changed)
+	EventBus.player_ammo_changed.connect(_on_ammo_changed)
+
+
+## Monta a interface por cÃ³digo (usado quando a cena nÃ£o traz os nÃ³s prontos).
+func _build_ui() -> void:
+	var margin: MarginContainer = MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 8)
+	margin.add_theme_constant_override("margin_top", 8)
+	add_child(margin)
+
+	var vbox: VBoxContainer = VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 4)
+	margin.add_child(vbox)
+
+	health_bar = ProgressBar.new()
+	health_bar.custom_minimum_size = Vector2(80.0, 8.0)
+	health_bar.show_percentage = false
+	vbox.add_child(health_bar)
+
+	ammo_row = HBoxContainer.new()
+	ammo_row.add_theme_constant_override("separation", 2)
+	vbox.add_child(ammo_row)
+
+
+func _on_health_changed(current: int, maximum: int) -> void:
+	health_bar.max_value = maximum
+	health_bar.value = current
+
+
+func _on_ammo_changed(current: int, maximum: int) -> void:
+	# Ajusta a quantidade de Ã­cones sÃ³ se a capacidade mudou (ex.: relÃ­quia no futuro).
+	while ammo_row.get_child_count() > maximum:
+		var extra: Node = ammo_row.get_child(ammo_row.get_child_count() - 1)
+		ammo_row.remove_child(extra)
+		extra.queue_free()
+	while ammo_row.get_child_count() < maximum:
+		ammo_row.add_child(_make_icon())
+	for i in maximum:
+		_set_icon_filled(ammo_row.get_child(i) as Control, i < current)
+
+
+func _make_icon() -> Control:
+	if stone_full != null:
+		var texture_rect: TextureRect = TextureRect.new()
+		texture_rect.stretch_mode = TextureRect.STRETCH_KEEP
+		return texture_rect
+	var color_rect: ColorRect = ColorRect.new()
+	color_rect.custom_minimum_size = PLACEHOLDER_SIZE
+	return color_rect
+
+
+func _set_icon_filled(icon: Control, filled: bool) -> void:
+	if icon is TextureRect:
+		(icon as TextureRect).texture = stone_full if filled else stone_empty
+	elif icon is ColorRect:
+		(icon as ColorRect).color = COLOR_FULL if filled else COLOR_EMPTY
+
+
+===== ui\hud.tscn =====
+
+[gd_scene format=3 uid="uid://d1xit5n6l7024"]
+
+[ext_resource type="Script" uid="uid://bymccul5dkyag" path="res://ui/hud.gd" id="1"]
+
+[node name="Hud" type="CanvasLayer" unique_id=1070552264]
+script = ExtResource("1")
+
+[node name="Margin" type="MarginContainer" parent="." unique_id=1453573929]
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+
+[node name="VBox" type="VBoxContainer" parent="Margin" unique_id=453060137]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="HealthBar" type="ProgressBar" parent="Margin/VBox" unique_id=250799897]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(80, 8)
+layout_mode = 2
+value = 100.0
+show_percentage = false
+
+[node name="AmmoRow" type="HBoxContainer" parent="Margin/VBox" unique_id=1214139678]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 2
+
+
+===== event_bus.gd =====
+
+extends Node
+
+
+# Called when the node enters the scene tree for the first time.
+func _ready() -> void:
+	pass # Replace with function body.
+
+
+# Called every frame. 'delta' is the elapsed time since the previous frame.
+func _process(delta: float) -> void:
+	pass
+
+
+===== project.godot =====
+
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[application]
+
+config/name="Desperto da Floresta"
+run/main_scene="res://dev/test_arena.tscn"
+config/features=PackedStringArray("4.7", "GL Compatibility")
+config/icon="res://icon.svg"
+
+[autoload]
+
+EventBus="*uid://dr52naar3s3o"
+
+[display]
+
+window/size/viewport_width=480
+window/size/viewport_height=270
+window/stretch/mode="viewport"
+window/stretch/scale_mode="integer"
+
+[input]
+
+move_left={
+"deadzone": 0.2,
+"events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":0,"physical_keycode":65,"key_label":0,"unicode":97,"location":0,"echo":false,"script":null)
+]
+}
+move_right={
+"deadzone": 0.2,
+"events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":0,"physical_keycode":68,"key_label":0,"unicode":100,"location":0,"echo":false,"script":null)
+]
+}
+jump={
+"deadzone": 0.2,
+"events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":0,"physical_keycode":32,"key_label":0,"unicode":32,"location":0,"echo":false,"script":null)
+, Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":0,"physical_keycode":87,"key_label":0,"unicode":119,"location":0,"echo":false,"script":null)
+]
+}
+attack={
+"deadzone": 0.2,
+"events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":0,"physical_keycode":74,"key_label":0,"unicode":106,"location":0,"echo":false,"script":null)
+]
+}
+dodge={
+"deadzone": 0.2,
+"events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":0,"physical_keycode":4194325,"key_label":0,"unicode":0,"location":0,"echo":false,"script":null)
+]
+}
+interact={
+"deadzone": 0.2,
+"events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":0,"physical_keycode":69,"key_label":0,"unicode":101,"location":0,"echo":false,"script":null)
+]
+}
+pause={
+"deadzone": 0.2,
+"events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":0,"physical_keycode":4194305,"key_label":0,"unicode":0,"location":0,"echo":false,"script":null)
+]
+}
+ranged_attack={
+"deadzone": 0.2,
+"events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":0,"physical_keycode":75,"key_label":0,"unicode":107,"location":0,"echo":false,"script":null)
+]
+}
+
+[layer_names]
+
+2d_physics/layer_1="world"
+2d_physics/layer_2="player"
+2d_physics/layer_3="enemy"
+2d_physics/layer_4="player_attack"
+2d_physics/layer_5="enemy_attack"
+2d_physics/layer_6="pickup"
+2d_physics/layer_7="interactable"
+
+[physics]
+
+3d/physics_engine="Jolt Physics"
+
+[rendering]
+
+textures/canvas_textures/default_texture_filter=0
+rendering_device/driver.windows="d3d12"
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+2d/snap/snap_2d_transforms_to_pixel=true
+

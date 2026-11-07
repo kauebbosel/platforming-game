@@ -21,4 +21,4 @@ func _on_hit(damage: int, _source: Node, _knockback: Vector2) -> void:
 
 func _on_died() -> void:
 	await get_tree().create_timer(0.6).timeout
-	health.health = health.max_health
+	health.reset()
