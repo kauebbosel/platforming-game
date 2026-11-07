@@ -24,8 +24,11 @@ func setup(data: ProjectileData, direction: int, shooter: CharacterBody2D) -> vo
 	_velocity = Vector2(direction * data.speed, 0.0)
 	_life = data.lifetime
 	hitbox.damage = data.damage
+	hitbox.team = data.team
+	hitbox.knockback = data.knockback
 	hitbox.source = shooter  # a Hitbox usa isso para não acertar quem atirou
-	sprite.flip_h = direction < 0
+	# Espelha o projétil inteiro (sprite, formas e a direção do knockback da Hitbox).
+	scale.x = float(direction)
 
 
 func _physics_process(delta: float) -> void:

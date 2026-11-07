@@ -3,6 +3,7 @@
 [ext_resource type="PackedScene" uid="uid://cl1nmi42voduh" path="res://entities/player/player.tscn" id="1"]
 [ext_resource type="PackedScene" uid="uid://dc3cg0r1sq183" path="res://dev/training_dummy.tscn" id="2"]
 [ext_resource type="Script" uid="uid://ce0fu2nsbfacq" path="res://components/camera/camera_rig.gd" id="3"]
+[ext_resource type="PackedScene" uid="uid://d1xit5n6l7024" path="res://ui/hud.tscn" id="4_3uw5k"]
 
 [sub_resource type="RectangleShape2D" id="floor_shape"]
 size = Vector2(640, 40)
@@ -63,3 +64,5 @@ position = Vector2(300, 305)
 [node name="CameraRig" type="Camera2D" parent="." unique_id=783073598]
 script = ExtResource("3")
 target = NodePath("../Player")
+
+[node name="Hud" parent="." unique_id=1070552264 instance=ExtResource("4_3uw5k")]
