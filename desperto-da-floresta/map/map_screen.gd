@@ -68,7 +68,26 @@ func reset() -> void:
 		(_views[id] as MapNodeView).state = MapNodeView.State.AVAILABLE
 	_layout()
 
+## Progresso do mapa como dados simples, para o RunState guardar entre salas.
+func export_progress() -> Dictionary:
+	var states: Dictionary = {}
+	for id: String in _views:
+		states[id] = (_views[id] as MapNodeView).state
+	return {"current_id": _current_id, "walked": _walked.keys(), "states": states}
 
+
+## Restaura o que export_progress() devolveu.
+func import_progress(progress: Dictionary) -> void:
+	_current_id = progress.get("current_id", "")
+	_walked.clear()
+	for key in progress.get("walked", []):
+		_walked[key] = true
+	var states: Dictionary = progress.get("states", {})
+	for id: String in states:
+		if _views.has(id):
+			(_views[id] as MapNodeView).state = states[id]
+	_layout()
+	
 func current_id() -> String:
 	return _current_id
 
