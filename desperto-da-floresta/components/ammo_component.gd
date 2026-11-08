@@ -18,6 +18,12 @@ var current: int = 0
 
 func _ready() -> void:
 	current = max_ammo
+	if RunState.run_active:
+		if RunState.ammo >= 0:
+			current = mini(RunState.ammo, max_ammo)
+		RunState.ammo = current
+		# Toda mudança de quantidade vai para o RunState (a munição persiste entre salas).
+		changed.connect(func(value: int, _maximum: int) -> void: RunState.ammo = value)
 
 
 func has(amount: int = 1) -> bool:

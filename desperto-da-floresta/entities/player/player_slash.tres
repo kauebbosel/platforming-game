@@ -4,6 +4,7 @@
 
 [resource]
 script = ExtResource("1_ib388")
+damage = 10
 active_frames = 6
 recovery_frames = 10
 ground_move_multiplier = 0.611

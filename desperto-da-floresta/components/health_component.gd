@@ -33,6 +33,11 @@ func heal(amount: int) -> void:
 	health = mini(health + amount, max_health)
 	changed.emit(health, max_health)
 
+## Define a vida atual sem passar por dano (ex.: voltar com a vida que se tinha ao entrar
+## numa sala). Não mata: o mínimo é 1; para matar use take_damage().
+func set_current(value: int) -> void:
+	health = clampi(value, 1, max_health)
+	changed.emit(health, max_health)
 
 ## Restaura a vida máxima (ex.: boneco de treino renascendo, nova run).
 func reset() -> void:
