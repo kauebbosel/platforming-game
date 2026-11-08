@@ -11,14 +11,15 @@ config_version=5
 [application]
 
 config/name="Desperto da Floresta"
-run/main_scene="res://dev/test_arena.tscn"
+run/main_scene="res://dev/start_run.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://icon.svg"
 
 [autoload]
 
-EventBus="*uid://dr52naar3s3o"
-SceneManager="*uid://dwfqgy2cma0us"
+EventBus="*res://core/event_bus.gd"
+RunState="*res://core/run_state.gd"
+SceneManager="*res://core/scene_manager.gd"
 
 [display]
 

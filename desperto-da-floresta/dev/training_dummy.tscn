@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://dc3cg0r1sq183"]
 
 [ext_resource type="Script" uid="uid://cmrc3qih8meqg" path="res://dev/training_dummy.gd" id="1_8eh5k"]
-[ext_resource type="Texture2D" uid="uid://d0hgk1effho6a" path="res://entities/enemies/mushroom_guy/mushroom_creature.png" id="2_8eh5k"]
+[ext_resource type="Texture2D" uid="uid://d0hgk1effho6a" path="res://entities/enemies/corpo_seco/mushroom_creature.png" id="2_8eh5k"]
 [ext_resource type="Script" uid="uid://b4101c84uef8o" path="res://components/health_component.gd" id="3_r3xm1"]
 [ext_resource type="Script" uid="uid://cejkgwdmbli8w" path="res://components/hurtbox.gd" id="4_m2jw4"]
 
