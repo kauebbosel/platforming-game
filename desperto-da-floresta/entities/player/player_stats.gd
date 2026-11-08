@@ -27,3 +27,7 @@ extends Resource
 @export var max_air_dashes: int = 1
 ## 0 = dash reto, sem cair durante ele.
 @export var dash_gravity_multiplier: float = 0.0
+
+@export_group("Morte")
+## Pausa entre morrer e reiniciar a sala (o Valtair fica parado, sem controle).
+@export_range(0.0, 5.0, 0.1, "suffix:s") var death_pause_time: float = 1.0

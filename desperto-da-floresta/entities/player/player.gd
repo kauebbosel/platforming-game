@@ -1,6 +1,9 @@
 # entities/player/player.gd
 class_name Player
 extends CharacterBody2D
+
+signal death_sequence_finished(permanent: bool)
+
 ## Controlador principal do Player: estado compartilhado e utilidades usadas pelos estados.
 
 @export var stats: PlayerStats
@@ -14,6 +17,7 @@ extends CharacterBody2D
 @onready var ranged: RangedAttackComponent = $RangedAttackComponent
 @onready var hurtbox: Hurtbox = $Hurtbox
 
+var permanent_death: bool = false
 var facing: int = 1  # 1 = direita, -1 = esquerda
 var coyote_timer: float = 0.0
 var jump_buffer_timer: float = 0.0
@@ -24,7 +28,6 @@ var jump_cut_available: bool = false
 var dash_cooldown_left: float = 0.0
 ## Dashes no ar ainda disponíveis; recarrega ao tocar o chão.
 var air_dashes_left: int = 0
-
 var _was_on_floor: bool = false
 
 
@@ -32,11 +35,14 @@ func _ready() -> void:
 	assert(stats != null, "ERRO: O recurso PlayerStats.tres precisa ser atribuído no Inspetor do Player!")
 	state_machine.init(self)
 	_connect_hud_events()
+	health.died.connect(_on_health_died)
 
 
 func _physics_process(delta: float) -> void:
 	# Coyote time centralizado: começa quando o chão some sem ter sido um pulo (velocity.y >= 0).
 	# Assim nenhum estado precisa lembrar de chamar start_coyote_timer().
+	if is_dead():
+		return
 	var on_floor: bool = is_on_floor()
 	if _was_on_floor and not on_floor and velocity.y >= 0.0:
 		start_coyote_timer()
@@ -68,6 +74,11 @@ func apply_gravity(delta: float) -> void:
 		g *= stats.fall_gravity_multiplier
 	velocity.y = move_toward(velocity.y, stats.max_fall_speed, g * delta)
 
+func is_dead() -> bool:
+	return health.health <= 0
+
+func _on_health_died() -> void:
+	state_machine.transition_to("dead")
 
 func can_jump() -> bool:
 	return is_on_floor() or coyote_timer > 0.0
@@ -129,6 +140,7 @@ func _connect_hud_events() -> void:
 	health.changed.connect(EventBus.player_health_changed.emit)
 	ammo.changed.connect(EventBus.player_ammo_changed.emit)
 	health.died.connect(EventBus.player_died.emit)
+	death_sequence_finished.connect(EventBus.player_death_finished.emit)
 	# Valores iniciais, depois que todos os nós (inclusive o HUD) terminarem o _ready.
 	_emit_hud_state.call_deferred()
 
@@ -147,3 +159,8 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		KEY_F1: hurtbox.receive_hit(10, self, Vector2.ZERO)
 		KEY_F2: health.heal(10)
 		KEY_F3: ammo.refill()
+		KEY_F4:  # morte definitiva (iria ao menu principal, por hora faz a msm coisa)
+			permanent_death = true
+			health.take_damage(health.health)
+		KEY_F5:  # morte normal (reinicia a sala)
+			health.take_damage(health.health)

@@ -12,3 +12,5 @@ signal player_health_changed(current: int, maximum: int)
 signal player_ammo_changed(current: int, maximum: int)
 @warning_ignore("unused_signal")
 signal player_died
+@warning_ignore("unused_signal")
+signal player_death_finished(permanent: bool)

@@ -28,6 +28,8 @@ func take_damage(amount: int, source: Node = null) -> void:
 
 
 func heal(amount: int) -> void:
+	if health <= 0:
+		return  # curar não ressuscita; para isso existe reset()
 	health = mini(health + amount, max_health)
 	changed.emit(health, max_health)
 

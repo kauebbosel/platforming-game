@@ -17,6 +17,7 @@
 [ext_resource type="Script" uid="uid://12fqn42eukj0" path="res://components/ammo_component.gd" id="15_3wlsy"]
 [ext_resource type="Script" uid="uid://c2ym3jvflxymj" path="res://entities/player/states/dash.gd" id="15_we0b7"]
 [ext_resource type="Script" uid="uid://ch2ofmejjk7ff" path="res://components/ranged_attack_component.gd" id="16_b2kln"]
+[ext_resource type="Script" uid="uid://gotnyctk5scf" path="res://entities/player/states/dead.gd" id="16_eyb6c"]
 [ext_resource type="PackedScene" path="res://entities/projectile/projectile.tscn" id="17_b2kln"]
 [ext_resource type="Resource" uid="uid://cqmb8f2dmjcg3" path="res://entities/projectile/stone.tres" id="17_we0b7"]
 [ext_resource type="Script" uid="uid://h6kfjy1lu01h" path="res://components/blink_component.gd" id="20_mtric"]
@@ -101,6 +102,9 @@ script = ExtResource("14_we0b7")
 
 [node name="Dash" type="Node" parent="StateMachine" unique_id=1061338682]
 script = ExtResource("15_we0b7")
+
+[node name="Dead" type="Node" parent="StateMachine" unique_id=1525624675]
+script = ExtResource("16_eyb6c")
 
 [node name="AmmoComponent" type="Node" parent="." unique_id=1871776644]
 script = ExtResource("15_3wlsy")

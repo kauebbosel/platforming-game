@@ -34,6 +34,7 @@ func _ready() -> void:
 	assert(attack_data != null, "AttackComponent precisa de um AttackData atribuído no Inspetor!")
 	hitbox.source = body
 	hitbox.damage = attack_data.damage
+	hitbox.knockback = attack_data.knockback
 	hitbox.hit_landed.connect(func(h: Hurtbox) -> void: hit_landed.emit(h))
 	_set_vfx_visible(false)
 
@@ -82,6 +83,7 @@ func enter_active() -> void:
 	state = State.ACTIVE
 	_timer = attack_data.active_time()
 	hitbox.damage = attack_data.damage
+	hitbox.knockback = attack_data.knockback
 	hitbox.activate()
 	_set_vfx_visible(true)
 	active_started.emit()
