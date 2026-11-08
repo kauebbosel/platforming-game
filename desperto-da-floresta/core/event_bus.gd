@@ -14,3 +14,5 @@ signal player_ammo_changed(current: int, maximum: int)
 signal player_died
 @warning_ignore("unused_signal")
 signal player_death_finished(permanent: bool)
+@warning_ignore("unused_signal")
+signal room_exit_requested
