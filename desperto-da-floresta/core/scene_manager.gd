@@ -6,6 +6,7 @@ extends Node
 
 const MAP_SCENE: String = "res://map/map_screen.tscn"
 const COMBAT_ROOM_SCENE: String = "res://levels/combat_room.tscn"
+const REST_SITE_SCENE: String = "res://levels/rest_site.tscn"
 ## Troque pelo caminho do menu quando ele existir. Enquanto o arquivo não existir,
 ## a morte definitiva só avisa no Output e começa uma run nova.
 const MAIN_MENU_PATH: String = "res://ui/main_menu.tscn"
@@ -67,6 +68,8 @@ func _on_map_node_chosen(id: String, kind: int) -> void:
 	match kind:
 		MapLayout.Kind.COMBATE:
 			enter_room(COMBAT_ROOM_SCENE)
+		MapLayout.Kind.DESCANSO:
+			enter_room(REST_SITE_SCENE)
 		_:
 			push_warning("SceneManager: o nó '%s' (%s) ainda não tem sala. Siga para o próximo nó." % [id, MapLayout.KIND_NAMES[kind]])
 

@@ -61,7 +61,7 @@ func _clear() -> void:
 	_is_cleared = true
 	_exit.visible = true
 	_exit.set_deferred("monitoring", true)
-	_message.text = "Sala limpa!  [%s] na porta para sair" % _interact_key_name()
+	_message.text = "Sala limpa!  [%s] na porta para sair" % InputHint.key_name(&"interact")
 	_message.visible = true
 	cleared.emit()
 
@@ -80,11 +80,3 @@ func _on_exit_body_entered(body: Node2D) -> void:
 func _on_exit_body_exited(body: Node2D) -> void:
 	if body.is_in_group(&"player"):
 		_player_at_exit = false
-
-
-func _interact_key_name() -> String:
-	for event in InputMap.action_get_events(&"interact"):
-		var key: InputEventKey = event as InputEventKey
-		if key != null:
-			return key.as_text_physical_keycode()
-	return "interagir"
