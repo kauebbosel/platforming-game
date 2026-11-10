@@ -32,10 +32,12 @@ var _was_on_floor: bool = false
 
 
 func _ready() -> void:
+	add_to_group(&"player")  # os inimigos encontram o alvo por este grupo
 	assert(stats != null, "ERRO: O recurso PlayerStats.tres precisa ser atribuído no Inspetor do Player!")
 	state_machine.init(self)
 	_connect_hud_events()
 	health.died.connect(_on_health_died)
+	_sync_with_run()
 
 
 func _physics_process(delta: float) -> void:
@@ -74,6 +76,16 @@ func apply_gravity(delta: float) -> void:
 		g *= stats.fall_gravity_multiplier
 	velocity.y = move_toward(velocity.y, stats.max_fall_speed, g * delta)
 
+## Dentro de uma run, a vida vem do RunState e toda mudança volta para ele.
+## (A munição faz o mesmo no próprio AmmoComponent.) Fora de uma run, não faz nada.
+func _sync_with_run() -> void:
+	if not RunState.run_active:
+		return
+	if RunState.health >= 0:
+		health.set_current(RunState.health)
+	RunState.health = health.health
+	health.changed.connect(func(current: int, _maximum: int) -> void: RunState.health = current)
+	
 func is_dead() -> bool:
 	return health.health <= 0
 
