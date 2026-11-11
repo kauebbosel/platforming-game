@@ -14,15 +14,20 @@ func physics_update(delta: float) -> void:
 		state_machine.transition_to("idle")
 		return
 
-	var offset: Vector2 = enemy.get_target().global_position - enemy.global_position
-	if absf(offset.x) > FACING_DEADZONE:
-		enemy.set_facing(1 if offset.x > 0.0 else -1)
+	var target: Node2D = enemy.get_target()
+	var offset: Vector2 = target.global_position - enemy.global_position
+	# Para onde correr: com chase_lead_time > 0 ele mira onde o alvo estará (interceptar).
+	var aim_x: float = offset.x
+	if enemy.data.chase_lead_time > 0.0 and target is CharacterBody2D:
+		aim_x += (target as CharacterBody2D).velocity.x * enemy.data.chase_lead_time
+	if absf(aim_x) > FACING_DEADZONE:
+		enemy.set_facing(1 if aim_x > 0.0 else -1)
 
 	if absf(offset.x) <= enemy.data.attack_range:
 		enemy.velocity.x = move_toward(enemy.velocity.x, 0.0, enemy.data.friction * delta)
 		var level: bool = absf(offset.y) <= enemy.data.attack_vertical_range
 		if level and enemy.attack_cooldown_left <= 0.0:
-			state_machine.transition_to("attack")
+			state_machine.transition_to(enemy.data.attack_state)
 			return
 	else:
 		enemy.velocity.x = enemy.facing * enemy.data.move_speed

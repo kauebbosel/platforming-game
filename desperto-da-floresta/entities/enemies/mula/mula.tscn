@@ -1,0 +1,89 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://entities/enemies/enemy_base.gd" id="1_base"]
+[ext_resource type="Resource" path="res://entities/enemies/mula/mula.tres" id="2_data"]
+[ext_resource type="Script" path="res://components/health_component.gd" id="3_health"]
+[ext_resource type="Script" path="res://components/hurtbox.gd" id="4_hurt"]
+[ext_resource type="Script" path="res://components/attack_component.gd" id="5_atk"]
+[ext_resource type="Script" path="res://components/hitbox.gd" id="6_hit"]
+[ext_resource type="Resource" path="res://entities/enemies/mula/mula_charge.tres" id="7_charge"]
+[ext_resource type="Script" path="res://entities/enemies/enemy_state_machine.gd" id="8_sm"]
+[ext_resource type="Script" path="res://entities/enemies/states/idle.gd" id="9_idle"]
+[ext_resource type="Script" path="res://entities/enemies/states/chase.gd" id="10_chase"]
+[ext_resource type="Script" path="res://entities/enemies/states/charge.gd" id="11_charge"]
+[ext_resource type="Script" path="res://entities/enemies/states/hurt.gd" id="12_hurt"]
+[ext_resource type="Script" path="res://entities/enemies/states/dead.gd" id="13_dead"]
+
+[sub_resource type="Gradient" id="placeholder_gradient"]
+colors = PackedColorArray(0.25, 0.15, 0.1, 1, 1, 0.5, 0.1, 1)
+
+[sub_resource type="GradientTexture2D" id="placeholder_tex"]
+gradient = SubResource("placeholder_gradient")
+width = 40
+height = 24
+fill_from = Vector2(0, 0.5)
+fill_to = Vector2(1, 0.5)
+
+[sub_resource type="RectangleShape2D" id="body_shape"]
+size = Vector2(34, 20)
+
+[sub_resource type="RectangleShape2D" id="hurt_shape"]
+size = Vector2(38, 24)
+
+[sub_resource type="RectangleShape2D" id="hit_shape"]
+size = Vector2(40, 20)
+
+[node name="Mula" type="CharacterBody2D"]
+collision_layer = 4
+script = ExtResource("1_base")
+data = ExtResource("2_data")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -10)
+shape = SubResource("body_shape")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = SubResource("placeholder_tex")
+offset = Vector2(0, -12)
+
+[node name="Health" type="Node" parent="."]
+script = ExtResource("3_health")
+max_health = 40
+
+[node name="Hurtbox" type="Area2D" parent="."]
+position = Vector2(0, -12)
+script = ExtResource("4_hurt")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox"]
+shape = SubResource("hurt_shape")
+
+[node name="AttackComponent" type="Node2D" parent="."]
+script = ExtResource("5_atk")
+attack_data = ExtResource("7_charge")
+
+[node name="Hitbox" type="Area2D" parent="AttackComponent"]
+position = Vector2(14, -12)
+script = ExtResource("6_hit")
+team = &"enemy"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="AttackComponent/Hitbox"]
+shape = SubResource("hit_shape")
+
+[node name="StateMachine" type="Node" parent="." node_paths=PackedStringArray("initial_state")]
+script = ExtResource("8_sm")
+initial_state = NodePath("Idle")
+
+[node name="Idle" type="Node" parent="StateMachine"]
+script = ExtResource("9_idle")
+
+[node name="Chase" type="Node" parent="StateMachine"]
+script = ExtResource("10_chase")
+
+[node name="Charge" type="Node" parent="StateMachine"]
+script = ExtResource("11_charge")
+
+[node name="Hurt" type="Node" parent="StateMachine"]
+script = ExtResource("12_hurt")
+
+[node name="Dead" type="Node" parent="StateMachine"]
+script = ExtResource("13_dead")
