@@ -9,6 +9,8 @@ extends CharacterBody2D
 ## filho) para corpo a corpo e/ou RangedAttackComponent para tiro. Ambos são opcionais.
 ## Para voador: basta marcar EnemyData.flying (o modo de movimento é ajustado em _ready).
 
+const LEAF_SCENE: PackedScene = preload("res://entities/pickups/leaf_pickup.tscn")
+
 @export var data: EnemyData
 ## Marque se a arte original olha para a direita (desmarque se olhar para a esquerda).
 @export var art_faces_right: bool = true
@@ -95,4 +97,23 @@ func _on_hit_received(_damage: int, _source: Node, knockback: Vector2) -> void:
 
 
 func _on_died() -> void:
+	_drop_leaves()
 	state_machine.transition_to("dead")
+
+
+## Solta as Folhas. Adiado porque a morte costuma acontecer dentro de um callback de física,
+## e não dá para criar corpos de colisão nesse momento.
+func _drop_leaves() -> void:
+	var count: int = randi_range(data.leaves_min, maxi(data.leaves_min, data.leaves_max))
+	for i in count:
+		_spawn_leaf.call_deferred(global_position + Vector2(0.0, -12.0))
+
+
+func _spawn_leaf(at: Vector2) -> void:
+	var parent: Node = get_parent()
+	if parent == null:
+		return
+	var leaf: LeafPickup = LEAF_SCENE.instantiate() as LeafPickup
+	parent.add_child(leaf)
+	leaf.global_position = at
+	leaf.pop(Vector2(randf_range(-60.0, 60.0), randf_range(-160.0, -110.0)))

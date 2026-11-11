@@ -16,3 +16,8 @@ signal player_died
 signal player_death_finished(permanent: bool)
 @warning_ignore("unused_signal")
 signal room_exit_requested
+
+@warning_ignore("unused_signal")
+signal leaves_gained(amount: int)
+@warning_ignore("unused_signal")
+signal leaves_changed(total: int)

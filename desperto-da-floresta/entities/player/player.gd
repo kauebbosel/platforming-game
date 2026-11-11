@@ -160,6 +160,7 @@ func _connect_hud_events() -> void:
 func _emit_hud_state() -> void:
 	EventBus.player_health_changed.emit(health.health, health.max_health)
 	EventBus.player_ammo_changed.emit(ammo.current, ammo.max_ammo)
+	EventBus.leaves_changed.emit(RunState.leaves)
 
 
 # TEMPORÁRIO: testa o HUD sem inimigos. Apague quando o Corpo-Seco existir.

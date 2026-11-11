@@ -1,0 +1,29 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://entities/pickups/leaf_pickup.gd" id="1_leaf"]
+
+[sub_resource type="CircleShape2D" id="body_shape"]
+radius = 3.0
+
+[sub_resource type="CircleShape2D" id="area_shape"]
+radius = 8.0
+
+[node name="LeafPickup" type="CharacterBody2D"]
+collision_layer = 32
+collision_mask = 1
+script = ExtResource("1_leaf")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("body_shape")
+
+[node name="Visual" type="Polygon2D" parent="."]
+color = Color(0.45, 0.85, 0.3, 1)
+polygon = PackedVector2Array(0, -5, 4, 0, 0, 5, -4, 0)
+
+[node name="PickupArea" type="Area2D" parent="."]
+collision_layer = 32
+collision_mask = 2
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="PickupArea"]
+shape = SubResource("area_shape")

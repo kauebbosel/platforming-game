@@ -59,6 +59,11 @@ extends Resource
 ## Velocidade horizontal durante a fase ativa da investida (só o estado Charge usa).
 @export var charge_speed: float = 0.0
 
+@export_group("Recompensa")
+## Quantas Folhas (1 de valor cada) o inimigo solta ao morrer: sorteia entre o mínimo e o máximo.
+@export var leaves_min: int = 1
+@export var leaves_max: int = 3
+
 @export_group("Reação ao dano")
 @export var hurt_duration: float = 0.25
 ## Fração do knockback recebido que ele realmente sofre (0.5 = recua "levemente").

@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://cgv1iq8h8ewvm"]
 
 [ext_resource type="Script" uid="uid://uvlpb0qh38u5" path="res://entities/enemies/enemy_base.gd" id="1_base"]
-[ext_resource type="Resource" path="res://entities/enemies/matinta_perera/matinta_perera.tres" id="2_data"]
+[ext_resource type="Resource" uid="uid://budrfb5egml" path="res://entities/enemies/matinta_perera/matinta_perera.tres" id="2_data"]
 [ext_resource type="Script" uid="uid://b4101c84uef8o" path="res://components/health_component.gd" id="3_health"]
 [ext_resource type="Script" uid="uid://cejkgwdmbli8w" path="res://components/hurtbox.gd" id="4_hurt"]
 [ext_resource type="Script" uid="uid://ch2ofmejjk7ff" path="res://components/ranged_attack_component.gd" id="5_ranged"]
