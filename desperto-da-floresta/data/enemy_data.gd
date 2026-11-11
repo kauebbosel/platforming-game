@@ -37,6 +37,24 @@ extends Resource
 ## Intervalo entre o primeiro e o segundo golpe do arranhão duplo (tempo para esquivar).
 @export var double_scratch_gap: float = 0.5
 
+@export_group("Voo")
+## Inimigo que flutua: sem gravidade enquanto vivo (ao morrer, cai).
+@export var flying: bool = false
+## Altura acima dos pés do alvo em que ele paira (o Valtair alcança com pulo + golpe ou pedra).
+@export var hover_height: float = 50.0
+## Faixa de distância horizontal que tenta manter: mais perto que o mínimo ele recua, mais
+## longe que o máximo ele se aproxima.
+@export var keep_distance_min: float = 110.0
+@export var keep_distance_max: float = 170.0
+## Aceleração (px/s²) ao mudar de velocidade no ar.
+@export var fly_acceleration: float = 350.0
+
+@export_group("Tiro")
+## Preparação antes de disparar (o jogador lê o ataque e se prepara).
+@export var shoot_windup: float = 0.6
+## Tempo parado depois do disparo, antes de voltar a se mover.
+@export var shoot_recover: float = 0.35
+
 @export_group("Investida")
 ## Velocidade horizontal durante a fase ativa da investida (só o estado Charge usa).
 @export var charge_speed: float = 0.0

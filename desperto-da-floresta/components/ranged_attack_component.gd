@@ -1,7 +1,7 @@
 # components/ranged_attack_component.gd
 class_name RangedAttackComponent
 extends Node
-## Dispara projétil reto. NÃO lê input: quem é dono (o Player, ou a IA de um inimigo)
+## Dispara projétil reto. N�O lê input: quem é dono (o Player, ou a IA de um inimigo)
 ## chama try_fire(). O pai precisa ser um CharacterBody2D.
 ## O projétil é adicionado à cena onde o dono está, para não acompanhar o movimento dele.
 
@@ -33,6 +33,15 @@ func _physics_process(delta: float) -> void:
 
 ## facing: 1 = direita, -1 = esquerda. Retorna true se atirou.
 func try_fire(facing: int) -> bool:
+	return _fire(Vector2(facing, 0.0), facing)
+
+
+## Tiro mirado: `direction` é o rumo do disparo (não precisa estar normalizado).
+func try_fire_toward(direction: Vector2) -> bool:
+	return _fire(direction, 1 if direction.x >= 0.0 else -1)
+
+
+func _fire(direction: Vector2, side: int) -> bool:
 	if _cooldown_left > 0.0:
 		return false
 	if ammo != null and not ammo.consume(ammo_cost):
@@ -40,8 +49,8 @@ func try_fire(facing: int) -> bool:
 
 	var projectile: Projectile = projectile_scene.instantiate() as Projectile
 	body.get_parent().add_child(projectile)
-	projectile.global_position = body.global_position + Vector2(muzzle_offset.x * facing, muzzle_offset.y)
-	projectile.setup(projectile_data, facing, body)
+	projectile.global_position = body.global_position + Vector2(muzzle_offset.x * side, muzzle_offset.y)
+	projectile.setup(projectile_data, direction, body)
 
 	_cooldown_left = cooldown
 	fired.emit()
