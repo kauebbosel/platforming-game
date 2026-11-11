@@ -3,7 +3,10 @@
 [ext_resource type="Script" uid="uid://dvrih7ayya7o" path="res://levels/combat_room.gd" id="1_room"]
 [ext_resource type="PackedScene" uid="uid://cl1nmi42voduh" path="res://entities/player/player.tscn" id="2_player"]
 [ext_resource type="PackedScene" path="res://entities/enemies/mula/mula.tscn" id="2_s7v03"]
+[ext_resource type="Script" uid="uid://b77sw0t2k7ijp" path="res://levels/enemy_spawn.gd" id="3_v84g5"]
 [ext_resource type="Script" uid="uid://ce0fu2nsbfacq" path="res://components/camera/camera_rig.gd" id="4_cam"]
+[ext_resource type="PackedScene" path="res://entities/enemies/matinta_perera/matinta_perera.tscn" id="4_gsrqe"]
+[ext_resource type="PackedScene" uid="uid://b7ucwvm8012bi" path="res://entities/enemies/corpo_seco/corpo_seco.tscn" id="5_fcpnw"]
 [ext_resource type="PackedScene" uid="uid://d1xit5n6l7024" path="res://ui/hud.tscn" id="5_hud"]
 
 [sub_resource type="RectangleShape2D" id="floor_shape"]
@@ -63,11 +66,23 @@ polygon = PackedVector2Array(-50, -4, 50, -4, 50, 4, -50, 4)
 
 [node name="Spawns" type="Node2D" parent="." unique_id=1025027271]
 
-[node name="Spawn1" type="Marker2D" parent="Spawns" unique_id=1408087897]
-position = Vector2(380, 309)
+[node name="EnemySpawn" type="Marker2D" parent="Spawns" unique_id=1254711367]
+position = Vector2(450, 230)
+script = ExtResource("3_v84g5")
+enemy_scene = ExtResource("4_gsrqe")
+metadata/_custom_type_script = "uid://b77sw0t2k7ijp"
 
-[node name="Spawn2" type="Marker2D" parent="Spawns" unique_id=1319128329]
-position = Vector2(520, 309)
+[node name="EnemySpawn2" type="Marker2D" parent="Spawns" unique_id=1207925106]
+position = Vector2(380, 309)
+script = ExtResource("3_v84g5")
+enemy_scene = ExtResource("5_fcpnw")
+metadata/_custom_type_script = "uid://b77sw0t2k7ijp"
+
+[node name="EnemySpawn3" type="Marker2D" parent="Spawns" unique_id=1302396700]
+position = Vector2(520, 230)
+script = ExtResource("3_v84g5")
+enemy_scene = ExtResource("2_s7v03")
+metadata/_custom_type_script = "uid://b77sw0t2k7ijp"
 
 [node name="ExitDoor" type="Area2D" parent="." unique_id=514992186]
 position = Vector2(605, 288)

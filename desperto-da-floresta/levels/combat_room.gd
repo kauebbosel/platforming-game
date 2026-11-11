@@ -1,13 +1,15 @@
 # levels/combat_room.gd
 class_name CombatRoom
 extends Node2D
-## Sala de combate: nasce com um inimigo em cada Marker2D de "Spawns" e, quando todos
+## Sala de combate: nasce com um inimigo em cada ponto de "Spawns" (EnemySpawn, que escolhe
+## o tipo de inimigo; ou um Marker2D simples, que usa o padrão da sala) e, quando todos
 ## morrem, libera a porta de saída. Não conhece o mapa nem o RunState: só avisa pelo
 ## EventBus (room_exit_requested) e o SceneManager decide para onde ir.
 
 signal cleared
 
-## O inimigo que nasce em cada ponto (ex.: corpo_seco.tscn).
+## Inimigo padrão: nasce nos pontos que não escolhem o próprio (ex.: corpo_seco.tscn).
+## Pode ficar vazio se todo ponto de nascimento for um EnemySpawn com inimigo definido.
 @export var enemy_scene: PackedScene
 
 @onready var _spawns: Node = $Spawns
@@ -21,7 +23,6 @@ var _exit_requested: bool = false
 
 
 func _ready() -> void:
-	assert(enemy_scene != null, "CombatRoom precisa de um enemy_scene atribuído no Inspetor!")
 	_exit.visible = false
 	_exit.monitoring = false
 	_exit.body_entered.connect(_on_exit_body_entered)
@@ -30,7 +31,7 @@ func _ready() -> void:
 
 	for marker in _spawns.get_children():
 		if marker is Marker2D:
-			_spawn_enemy((marker as Marker2D).position)
+			_spawn_at(marker as Marker2D)
 	if _alive == 0:
 		_clear()
 
@@ -43,8 +44,19 @@ func is_cleared() -> bool:
 	return _is_cleared
 
 
-func _spawn_enemy(at: Vector2) -> void:
-	var enemy: EnemyBase = enemy_scene.instantiate() as EnemyBase
+## O ponto escolhe o inimigo (EnemySpawn); sem escolha, vale o padrão da sala.
+func _spawn_at(marker: Marker2D) -> void:
+	var scene: PackedScene = enemy_scene
+	if marker is EnemySpawn and (marker as EnemySpawn).enemy_scene != null:
+		scene = (marker as EnemySpawn).enemy_scene
+	if scene == null:
+		push_warning("CombatRoom: o ponto '%s' não tem inimigo (defina Enemy Scene nele ou na sala)." % marker.name)
+		return
+	_spawn_enemy(scene, to_local(marker.global_position))
+
+
+func _spawn_enemy(scene: PackedScene, at: Vector2) -> void:
+	var enemy: EnemyBase = scene.instantiate() as EnemyBase
 	enemy.position = at
 	add_child(enemy)
 	enemy.health.died.connect(_on_enemy_died)
@@ -61,7 +73,7 @@ func _clear() -> void:
 	_is_cleared = true
 	_exit.visible = true
 	_exit.set_deferred("monitoring", true)
-	_message.text = "Sala limpa!  [%s] na porta para sair" % _interact_key_name()
+	_message.text = "Sala limpa!  [%s] na porta para sair" % InputHint.key_name(&"interact")
 	_message.visible = true
 	cleared.emit()
 
@@ -80,11 +92,3 @@ func _on_exit_body_entered(body: Node2D) -> void:
 func _on_exit_body_exited(body: Node2D) -> void:
 	if body.is_in_group(&"player"):
 		_player_at_exit = false
-
-
-func _interact_key_name() -> String:
-	for event in InputMap.action_get_events(&"interact"):
-		var key: InputEventKey = event as InputEventKey
-		if key != null:
-			return key.as_text_physical_keycode()
-	return "interagir"
