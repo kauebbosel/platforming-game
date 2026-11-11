@@ -10,7 +10,5 @@ extends Resource
 ## Quem o projétil NÃO atinge: só acerta Hurtboxes de outro time.
 ## O padrão é "player" (pedra do Valtair). Projéteis de inimigos precisam de &"enemy".
 @export var team: StringName = &"player"
-## Cor do projétil (para distinguir o tiro inimigo da pedra do Valtair).
-@export var tint: Color = Color.WHITE
 ## Knockback para quem atira para a direita; o X é espelhado com a direção do tiro.
 @export var knockback: Vector2 = Vector2(160.0, -80.0)

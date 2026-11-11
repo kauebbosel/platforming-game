@@ -20,10 +20,7 @@ func exit() -> void:
 
 func physics_update(delta: float) -> void:
 	enemy.apply_gravity(delta)
-	if enemy.data.flying:
-		enemy.velocity = enemy.velocity.move_toward(Vector2.ZERO, enemy.data.friction * delta)
-	else:
-		enemy.velocity.x = move_toward(enemy.velocity.x, 0.0, enemy.data.friction * delta)
+	enemy.velocity.x = move_toward(enemy.velocity.x, 0.0, enemy.data.friction * delta)
 	enemy.move_and_slide()
 	_time_left -= delta
 	if _time_left <= 0.0:

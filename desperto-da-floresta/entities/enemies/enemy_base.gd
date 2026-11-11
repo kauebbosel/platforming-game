@@ -1,13 +1,11 @@
 # entities/enemies/enemy_base.gd
 class_name EnemyBase
 extends CharacterBody2D
-## Base dos inimigos: estado compartilhado e utilidades usadas pelos estados.
+## Base dos inimigos corpo a corpo: estado compartilhado e utilidades usadas pelos estados.
 ## O que muda de um inimigo para outro fica em dois lugares: o EnemyData (números de
 ## comportamento) e o AttackData do AttackComponent (o golpe). Estrutura exigida da cena
-## (nomes exatos): Sprite2D, Health, Hurtbox e StateMachine (EnemyStateMachine) com os
-## estados Idle, Chase, Hurt e Dead, mais o que o ataque pedir: AttackComponent (com Hitbox
-## filho) para corpo a corpo e/ou RangedAttackComponent para tiro. Ambos são opcionais.
-## Para voador: basta marcar EnemyData.flying (o modo de movimento é ajustado em _ready).
+## (nomes exatos): Sprite2D, Health, Hurtbox, AttackComponent (com Hitbox filho) e
+## StateMachine (EnemyStateMachine) com os estados Idle, Chase, Attack, Hurt e Dead.
 
 @export var data: EnemyData
 ## Marque se a arte original olha para a direita (desmarque se olhar para a esquerda).
@@ -16,8 +14,7 @@ extends CharacterBody2D
 @onready var state_machine: EnemyStateMachine = $StateMachine
 @onready var health: HealthComponent = $Health
 @onready var hurtbox: Hurtbox = $Hurtbox
-@onready var attack: AttackComponent = get_node_or_null("AttackComponent") as AttackComponent
-@onready var ranged: RangedAttackComponent = get_node_or_null("RangedAttackComponent") as RangedAttackComponent
+@onready var attack: AttackComponent = $AttackComponent
 @onready var sprite: Sprite2D = $Sprite2D
 
 var facing: int = 1
@@ -32,8 +29,6 @@ var _target: Node2D
 func _ready() -> void:
 	assert(data != null, "EnemyBase precisa de um EnemyData atribuído no Inspetor!")
 	# A vida vem do EnemyData (uma fonte só); o max_health do Health na cena é ignorado.
-	# Voador flutua (sem chão nem gravidade); os demais andam no chão. Uma fonte só: o EnemyData.
-	motion_mode = CharacterBody2D.MOTION_MODE_FLOATING if data.flying else CharacterBody2D.MOTION_MODE_GROUNDED
 	health.max_health = data.max_health
 	health.reset()
 	hurtbox.hit_received.connect(_on_hit_received)
@@ -47,9 +42,6 @@ func _physics_process(delta: float) -> void:
 
 
 func apply_gravity(delta: float) -> void:
-	# Voador vivo flutua; morto, cai como qualquer corpo.
-	if data.flying and not is_dead():
-		return
 	if not is_on_floor():
 		velocity.y = move_toward(velocity.y, data.max_fall_speed, data.gravity * delta)
 
@@ -82,7 +74,7 @@ func set_facing(dir: int) -> void:
 	facing = dir
 	sprite.flip_h = (dir < 0) if art_faces_right else (dir > 0)
 	# A hitbox não pode virar no meio do golpe.
-	if attack != null and not attack.is_attacking():
+	if not attack.is_attacking():
 		attack.set_facing(dir)
 
 
