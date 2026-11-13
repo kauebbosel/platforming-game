@@ -1,6 +1,6 @@
-[gd_resource type="Resource" script_class="EnemyData" format=3]
+[gd_resource type="Resource" script_class="EnemyData" format=3 uid="uid://budrfb5egml"]
 
-[ext_resource type="Script" path="res://data/enemy_data.gd" id="1_data"]
+[ext_resource type="Script" uid="uid://bqonvx1qr5n64" path="res://data/enemy_data.gd" id="1_data"]
 
 [resource]
 script = ExtResource("1_data")
@@ -12,11 +12,7 @@ attack_range = 200.0
 attack_state = &"shoot"
 attack_cooldown = 1.6
 flying = true
-hover_height = 50.0
-keep_distance_min = 110.0
-keep_distance_max = 170.0
-fly_acceleration = 350.0
-shoot_windup = 0.6
-shoot_recover = 0.35
+leaves_min = 2
+leaves_max = 4
 hurt_duration = 0.2
 knockback_scale = 0.4

@@ -18,6 +18,7 @@ const COLOR_EMPTY: Color = Color(0.25, 0.25, 0.25)
 
 var health_bar: ProgressBar
 var ammo_row: HBoxContainer
+var leaf_label: Label
 
 
 func _ready() -> void:
@@ -28,6 +29,14 @@ func _ready() -> void:
 
 	EventBus.player_health_changed.connect(_on_health_changed)
 	EventBus.player_ammo_changed.connect(_on_ammo_changed)
+
+	leaf_label = get_node_or_null("%LeafLabel") as Label
+	if leaf_label == null:
+		leaf_label = Label.new()
+		leaf_label.add_theme_font_size_override("font_size", 8)
+		ammo_row.get_parent().add_child(leaf_label)
+	leaf_label.text = "Folhas: 0"
+	EventBus.leaves_changed.connect(_on_leaves_changed)
 
 
 ## Monta a interface por código (usado quando a cena não traz os nós prontos).
@@ -54,6 +63,10 @@ func _build_ui() -> void:
 func _on_health_changed(current: int, maximum: int) -> void:
 	health_bar.max_value = maximum
 	health_bar.value = current
+
+
+func _on_leaves_changed(total: int) -> void:
+	leaf_label.text = "Folhas: %d" % total
 
 
 func _on_ammo_changed(current: int, maximum: int) -> void:

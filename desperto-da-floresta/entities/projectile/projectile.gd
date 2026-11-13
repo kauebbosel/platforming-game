@@ -22,12 +22,12 @@ func _ready() -> void:
 
 ## `direction` não precisa estar normalizado. Horizontal (y = 0) espelha o projétil; mirado
 ## (diagonal) gira o projétil inteiro. Nos dois casos o knockback da Hitbox acompanha o rumo.
-func setup(data: ProjectileData, direction: Vector2, shooter: CharacterBody2D) -> void:
+func setup(data: ProjectileData, direction: Vector2, shooter: CharacterBody2D, damage_mult: float = 1.0, speed_mult: float = 1.0) -> void:
 	var dir: Vector2 = direction.normalized()
-	_velocity = dir * data.speed
+	_velocity = dir * data.speed * speed_mult
 	sprite.modulate = data.tint
 	_life = data.lifetime
-	hitbox.damage = data.damage
+	hitbox.damage = roundi(data.damage * damage_mult)
 	hitbox.team = data.team
 	hitbox.knockback = data.knockback
 	hitbox.source = shooter  # a Hitbox usa isso para não acertar quem atirou

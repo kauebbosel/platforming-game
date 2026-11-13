@@ -11,6 +11,8 @@ signal cleared
 ## Inimigo padrão: nasce nos pontos que não escolhem o próprio (ex.: corpo_seco.tscn).
 ## Pode ficar vazio se todo ponto de nascimento for um EnemySpawn com inimigo definido.
 @export var enemy_scene: PackedScene
+## Folhas que a sala dá de bônus ao ser limpa (além das que os inimigos soltam).
+@export var clear_bonus_leaves: int = 10
 
 @onready var _spawns: Node = $Spawns
 @onready var _exit: Area2D = $ExitDoor
@@ -73,7 +75,14 @@ func _clear() -> void:
 	_is_cleared = true
 	_exit.visible = true
 	_exit.set_deferred("monitoring", true)
-	_message.text = "Sala limpa!  [%s] na porta para sair" % InputHint.key_name(&"interact")
+	var key: String = InputHint.key_name(&"interact")
+	if clear_bonus_leaves > 0:
+		EventBus.leaves_gained.emit(clear_bonus_leaves)
+		_message.text = "Sala limpa!  +%d Folhas  [%s] na porta para sair" % [clear_bonus_leaves, key]
+	else:
+		_message.text = "Sala limpa!  [%s] na porta para sair" % key
+	# As Folhas que ficaram no chão vão até o Valtair (dá um instante para as últimas caírem).
+	get_tree().create_timer(0.6).timeout.connect(_attract_leaves)
 	_message.visible = true
 	cleared.emit()
 
@@ -82,6 +91,10 @@ func _unhandled_input(event: InputEvent) -> void:
 	if _is_cleared and _player_at_exit and not _exit_requested and event.is_action_pressed(&"interact"):
 		_exit_requested = true
 		EventBus.room_exit_requested.emit()
+
+
+func _attract_leaves() -> void:
+	get_tree().call_group(&"leaf_pickups", &"attract")
 
 
 func _on_exit_body_entered(body: Node2D) -> void:
