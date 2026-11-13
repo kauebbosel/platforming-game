@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="RelicPool" format=3]
+
+[ext_resource type="Script" path="res://data/relic_pool.gd" id="pool_script"]
+[ext_resource type="Script" path="res://data/relic_data.gd" id="relic_script"]
+[ext_resource type="Resource" path="res://relics/pena_do_uirapuru.tres" id="r0"]
+[ext_resource type="Resource" path="res://relics/casco_do_jabuti.tres" id="r1"]
+[ext_resource type="Resource" path="res://relics/presa_da_onca.tres" id="r2"]
+[ext_resource type="Resource" path="res://relics/pedra_de_rio.tres" id="r3"]
+[ext_resource type="Resource" path="res://relics/asas_da_arara.tres" id="r4"]
+[ext_resource type="Resource" path="res://relics/casca_de_samauma.tres" id="r5"]
+[ext_resource type="Resource" path="res://relics/semente_de_guarana.tres" id="r6"]
+[ext_resource type="Resource" path="res://relics/olhos_da_coruja.tres" id="r7"]
+
+[resource]
+script = ExtResource("pool_script")
+relics = Array[ExtResource("relic_script")]([ExtResource("r0"), ExtResource("r1"), ExtResource("r2"), ExtResource("r3"), ExtResource("r4"), ExtResource("r5"), ExtResource("r6"), ExtResource("r7")])

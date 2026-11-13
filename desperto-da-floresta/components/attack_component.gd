@@ -30,10 +30,15 @@ var state: State = State.IDLE
 var _timer: float = 0.0
 
 
+## Multiplicadores do dono (relíquias do Valtair). Os inimigos ficam em 1.0.
+var damage_multiplier: float = 1.0
+var speed_multiplier: float = 1.0
+
+
 func _ready() -> void:
 	assert(attack_data != null, "AttackComponent precisa de um AttackData atribuído no Inspetor!")
 	hitbox.source = body
-	hitbox.damage = attack_data.damage
+	hitbox.damage = roundi(attack_data.damage * damage_multiplier)
 	hitbox.knockback = attack_data.knockback
 	hitbox.hit_landed.connect(func(h: Hurtbox) -> void: hit_landed.emit(h))
 	_set_vfx_visible(false)
@@ -62,7 +67,7 @@ func start() -> void:
 func update(delta: float) -> void:
 	if state == State.IDLE or not timer_driven:
 		return
-	_timer -= delta
+	_timer -= delta * speed_multiplier
 	if _timer > 0.0:
 		return
 	match state:
@@ -82,7 +87,7 @@ func cancel() -> void:
 func enter_active() -> void:
 	state = State.ACTIVE
 	_timer = attack_data.active_time()
-	hitbox.damage = attack_data.damage
+	hitbox.damage = roundi(attack_data.damage * damage_multiplier)
 	hitbox.knockback = attack_data.knockback
 	hitbox.activate()
 	_set_vfx_visible(true)

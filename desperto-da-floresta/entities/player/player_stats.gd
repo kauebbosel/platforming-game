@@ -31,3 +31,12 @@ extends Resource
 @export_group("Morte")
 ## Pausa entre morrer e reiniciar a sala (o Valtair fica parado, sem controle).
 @export_range(0.0, 5.0, 0.1, "suffix:s") var death_pause_time: float = 1.0
+
+@export_group("Modificadores (relíquias)")
+## Estes números começam neutros; as relíquias da run os alteram (ver StatModifier).
+@export var max_health_bonus: int = 0
+@export var damage_taken_mult: float = 1.0
+@export var melee_damage_mult: float = 1.0
+@export var ranged_damage_mult: float = 1.0
+@export var attack_speed_mult: float = 1.0
+@export var projectile_speed_mult: float = 1.0

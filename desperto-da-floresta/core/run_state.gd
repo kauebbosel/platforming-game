@@ -15,6 +15,9 @@ var ammo: int = -1
 ## Folhas (a moeda). Vêm de inimigos e de salas limpas; a loja as gasta.
 var leaves: int = 0
 
+## Relíquias que o Valtair tem nesta run (aplicadas ao PlayerStats pelo Player).
+var relics: Array[RelicData] = []
+
 ## Cópia de `health` e `ammo` no momento em que a sala atual começou.
 ## É o que volta quando o Valtair morre e a sala reinicia.
 var entry_health: int = -1
@@ -36,6 +39,24 @@ func add_leaves(amount: int) -> void:
 	EventBus.leaves_changed.emit(leaves)
 
 
+func has_relic(relic: RelicData) -> bool:
+	for r in relics:
+		if r.id == relic.id:
+			return true
+	return false
+
+
+func add_relic(relic: RelicData) -> void:
+	if not has_relic(relic):
+		relics.append(relic)
+
+
+## Aplica todas as relíquias da run a uma cópia do PlayerStats.
+func apply_relics(stats: Object) -> void:
+	for relic in relics:
+		relic.apply_to(stats)
+
+
 func start_run() -> void:
 	reset()
 	run_active = true
@@ -53,6 +74,7 @@ func reset() -> void:
 	entry_ammo = -1
 	leaves = 0
 	entry_leaves = 0
+	relics.clear()
 	map_progress = {}
 
 

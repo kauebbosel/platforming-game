@@ -11,7 +11,8 @@ signal died
 @export var max_health: int = 5
 
 var health: int
-
+## Multiplicador do dano recebido (relíquias do Valtair; os inimigos ficam em 1.0).
+var damage_taken_mult: float = 1.0
 
 func _ready() -> void:
 	health = max_health
@@ -20,6 +21,10 @@ func _ready() -> void:
 func take_damage(amount: int, source: Node = null) -> void:
 	if health <= 0:
 		return
+		
+	if not is_equal_approx(damage_taken_mult, 1.0):
+		amount = maxi(1, roundi(amount * damage_taken_mult))
+	
 	health = maxi(health - amount, 0)
 	damaged.emit(amount, source)
 	changed.emit(health, max_health)

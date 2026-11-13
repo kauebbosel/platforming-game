@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="RelicData" format=3 uid="uid://bcxpi5df33r0h"]
+
+[ext_resource type="Script" uid="uid://cbhc7m3mnl4x8" path="res://data/relic_data.gd" id="1_relic"]
+[ext_resource type="Script" uid="uid://cygivoaksm28k" path="res://data/stat_modifier.gd" id="2_mod"]
+
+[sub_resource type="Resource" id="Resource_mod"]
+script = ExtResource("2_mod")
+stat = &"projectile_speed_mult"
+value = 1.6
+
+[resource]
+script = ExtResource("1_relic")
+id = &"olhos_da_coruja"
+display_name = "Olhos da Coruja"
+description = "Aumenta em 60% a velocidade dos projéteis do bodoque."
+modifiers = Array[ExtResource("2_mod")]([SubResource("Resource_mod")])

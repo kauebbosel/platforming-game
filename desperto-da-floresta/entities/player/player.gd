@@ -1,10 +1,10 @@
 # entities/player/player.gd
 class_name Player
 extends CharacterBody2D
-
-signal death_sequence_finished(permanent: bool)
-
 ## Controlador principal do Player: estado compartilhado e utilidades usadas pelos estados.
+
+## Emitido quando a pausa da morte acaba. `permanent` = true leva ao menu principal.
+signal death_sequence_finished(permanent: bool)
 
 @export var stats: PlayerStats
 
@@ -17,7 +17,6 @@ signal death_sequence_finished(permanent: bool)
 @onready var ranged: RangedAttackComponent = $RangedAttackComponent
 @onready var hurtbox: Hurtbox = $Hurtbox
 
-var permanent_death: bool = false
 var facing: int = 1  # 1 = direita, -1 = esquerda
 var coyote_timer: float = 0.0
 var jump_buffer_timer: float = 0.0
@@ -28,23 +27,35 @@ var jump_cut_available: bool = false
 var dash_cooldown_left: float = 0.0
 ## Dashes no ar ainda disponíveis; recarrega ao tocar o chão.
 var air_dashes_left: int = 0
+
+## Se verdadeiro, a morte é definitiva (menu principal) em vez de reiniciar a sala.
+## Por enquanto só o F4 liga isso; depois, o RunState decide.
+var permanent_death: bool = false
+
+# Valores de fábrica; as relíquias são aplicadas sobre uma CÓPIA em refresh_stats().
+var _base_stats: PlayerStats
+var _base_max_health: int = 100
+
 var _was_on_floor: bool = false
 
 
 func _ready() -> void:
 	add_to_group(&"player")  # os inimigos encontram o alvo por este grupo
 	assert(stats != null, "ERRO: O recurso PlayerStats.tres precisa ser atribuído no Inspetor do Player!")
+	_base_stats = stats
+	_base_max_health = health.max_health
 	state_machine.init(self)
 	_connect_hud_events()
 	health.died.connect(_on_health_died)
+	refresh_stats()
+	if not RunState.run_active:
+		health.reset()  # sem run: vida cheia (com a vida máxima das relíquias)
 	_sync_with_run()
 
 
 func _physics_process(delta: float) -> void:
 	# Coyote time centralizado: começa quando o chão some sem ter sido um pulo (velocity.y >= 0).
 	# Assim nenhum estado precisa lembrar de chamar start_coyote_timer().
-	if is_dead():
-		return
 	var on_floor: bool = is_on_floor()
 	if _was_on_floor and not on_floor and velocity.y >= 0.0:
 		start_coyote_timer()
@@ -57,6 +68,10 @@ func _physics_process(delta: float) -> void:
 		air_dashes_left = stats.max_air_dashes
 	if dash_cooldown_left > 0.0:
 		dash_cooldown_left -= delta
+
+	# Morto: sem dash nem tiro. O estado Dead cuida do resto.
+	if is_dead():
+		return
 
 	# Dash: transição global, vale em qualquer estado (inclusive durante o golpe, que é cancelado).
 	# Roda antes dos estados, então a troca já vale neste mesmo frame.
@@ -76,6 +91,7 @@ func apply_gravity(delta: float) -> void:
 		g *= stats.fall_gravity_multiplier
 	velocity.y = move_toward(velocity.y, stats.max_fall_speed, g * delta)
 
+
 ## Dentro de uma run, a vida vem do RunState e toda mudança volta para ele.
 ## (A munição faz o mesmo no próprio AmmoComponent.) Fora de uma run, não faz nada.
 func _sync_with_run() -> void:
@@ -85,12 +101,30 @@ func _sync_with_run() -> void:
 		health.set_current(RunState.health)
 	RunState.health = health.health
 	health.changed.connect(func(current: int, _maximum: int) -> void: RunState.health = current)
-	
+
+
+## Recalcula os números do Valtair: PlayerStats de fábrica + relíquias da run.
+## Chame de novo ao ganhar uma relíquia no meio da sala. (A vida atual não muda: quem dá a
+## relíquia decide se cura junto.)
+func refresh_stats() -> void:
+	stats = _base_stats.duplicate() as PlayerStats
+	RunState.apply_relics(stats)
+	health.max_health = _base_max_health + stats.max_health_bonus
+	health.damage_taken_mult = stats.damage_taken_mult
+	attack.damage_multiplier = stats.melee_damage_mult
+	attack.speed_multiplier = stats.attack_speed_mult
+	ranged.damage_multiplier = stats.ranged_damage_mult
+	ranged.speed_multiplier = stats.projectile_speed_mult
+	health.changed.emit(health.health, health.max_health)
+
+
 func is_dead() -> bool:
 	return health.health <= 0
 
+
 func _on_health_died() -> void:
 	state_machine.transition_to("dead")
+
 
 func can_jump() -> bool:
 	return is_on_floor() or coyote_timer > 0.0
@@ -172,8 +206,15 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		KEY_F1: hurtbox.receive_hit(10, self, Vector2.ZERO)
 		KEY_F2: health.heal(10)
 		KEY_F3: ammo.refill()
-		KEY_F4:  # morte definitiva (iria ao menu principal, por hora faz a msm coisa)
+		KEY_F4:  # morte definitiva (iria ao menu principal)
 			permanent_death = true
 			health.take_damage(health.health)
+		KEY_F6:  # relíquia aleatória (teste)
+			var pool: RelicPool = load("res://relics/relic_pool.tres")
+			var relic: RelicData = pool.pick_random(RunState.relics)
+			if relic != null:
+				RunState.add_relic(relic)
+				refresh_stats()
+				print("Relíquia: ", relic.display_name)
 		KEY_F5:  # morte normal (reinicia a sala)
 			health.take_damage(health.health)

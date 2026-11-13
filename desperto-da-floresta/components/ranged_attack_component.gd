@@ -41,6 +41,11 @@ func try_fire_toward(direction: Vector2) -> bool:
 	return _fire(direction, 1 if direction.x >= 0.0 else -1)
 
 
+## Multiplicadores do dono (relíquias do Valtair). Os inimigos ficam em 1.0.
+var damage_multiplier: float = 1.0
+var speed_multiplier: float = 1.0
+
+
 func _fire(direction: Vector2, side: int) -> bool:
 	if _cooldown_left > 0.0:
 		return false
@@ -50,7 +55,7 @@ func _fire(direction: Vector2, side: int) -> bool:
 	var projectile: Projectile = projectile_scene.instantiate() as Projectile
 	body.get_parent().add_child(projectile)
 	projectile.global_position = body.global_position + Vector2(muzzle_offset.x * side, muzzle_offset.y)
-	projectile.setup(projectile_data, direction, body)
+	projectile.setup(projectile_data, direction, body, damage_multiplier, speed_multiplier)
 
 	_cooldown_left = cooldown
 	fired.emit()
