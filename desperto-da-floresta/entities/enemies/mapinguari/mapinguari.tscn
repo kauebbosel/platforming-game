@@ -6,7 +6,7 @@
 [ext_resource type="Script" uid="uid://b4101c84uef8o" path="res://components/health_component.gd" id="4_kvtnd"]
 [ext_resource type="Script" uid="uid://cejkgwdmbli8w" path="res://components/hurtbox.gd" id="5_m8bu6"]
 [ext_resource type="Script" uid="uid://bck7j34xyv288" path="res://components/attack_component.gd" id="6_urhos"]
-[ext_resource type="Resource" path="res://entities/enemies/mapinguari/mapinguari_golpe.tres" id="7_ntwm4"]
+[ext_resource type="Resource" uid="uid://ce538x20u68fw" path="res://entities/enemies/mapinguari/mapinguari_golpe.tres" id="7_ntwm4"]
 [ext_resource type="Script" uid="uid://bprjvu4g3lmvd" path="res://components/hitbox.gd" id="8_o0wpy"]
 [ext_resource type="Script" uid="uid://cc1elcc4a2csf" path="res://entities/enemies/enemy_state_machine.gd" id="9_85tjv"]
 [ext_resource type="Script" uid="uid://i2b5mhphsltu" path="res://entities/enemies/states/idle.gd" id="10_lg1uh"]
@@ -16,7 +16,7 @@
 [ext_resource type="Script" uid="uid://br84h82kilyjj" path="res://entities/enemies/states/dead.gd" id="14_0qhpp"]
 
 [sub_resource type="RectangleShape2D" id="body_shape"]
-size = Vector2(36, 44)
+size = Vector2(36, 36)
 
 [sub_resource type="RectangleShape2D" id="hurt_shape"]
 size = Vector2(44, 50)
@@ -30,7 +30,7 @@ script = ExtResource("1_pfi3t")
 data = ExtResource("2_103sq")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1320020822]
-position = Vector2(0, -14)
+position = Vector2(0, -18)
 shape = SubResource("body_shape")
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=77651249]
