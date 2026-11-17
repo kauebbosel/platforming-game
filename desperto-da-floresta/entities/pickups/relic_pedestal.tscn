@@ -1,0 +1,8 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://entities/pickups/relic_pedestal.gd" id="1_ped"]
+
+[node name="RelicPedestal" type="Area2D"]
+collision_layer = 64
+collision_mask = 2
+script = ExtResource("1_ped")

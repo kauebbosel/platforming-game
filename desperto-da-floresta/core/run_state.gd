@@ -23,6 +23,7 @@ var relics: Array[RelicData] = []
 var entry_health: int = -1
 var entry_ammo: int = -1
 var entry_leaves: int = 0
+var entry_relics: Array[RelicData] = []
 
 ## Progresso no mapa (formato do MapScreen.export_progress()). Vazio = origem.
 var map_progress: Dictionary = {}
@@ -75,6 +76,7 @@ func reset() -> void:
 	leaves = 0
 	entry_leaves = 0
 	relics.clear()
+	entry_relics.clear()
 	map_progress = {}
 
 
@@ -82,9 +84,11 @@ func begin_room() -> void:
 	entry_health = health
 	entry_ammo = ammo
 	entry_leaves = leaves
+	entry_relics.assign(relics)
 
 
 func restore_room_entry() -> void:
 	health = entry_health
 	ammo = entry_ammo
 	leaves = entry_leaves
+	relics.assign(entry_relics)

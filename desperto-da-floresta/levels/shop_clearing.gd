@@ -98,13 +98,7 @@ func buy(offer: Dictionary) -> bool:
 		Kind.AMMO:
 			_player.ammo.refill()
 		Kind.RELIC:
-			var old_max: int = _player.health.max_health
-			RunState.add_relic(offer["relic"])
-			_player.refresh_stats()
-			# Vida máxima nova também vem cheia: quem ganha +20 de vida ganha +20 agora.
-			var gained: int = _player.health.max_health - old_max
-			if gained > 0:
-				_player.health.heal(gained)
+			_player.grant_relic(offer["relic"])
 	return true
 
 
@@ -157,6 +151,8 @@ func _rebuild_rows(focus_index: int) -> void:
 		button.add_theme_font_size_override("font_size", 10)
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		button.text = "%s   (%d)" % [offer["name"], offer["price"]]
+		if offer["relic"] != null and (offer["relic"] as RelicData).icon != null:
+			button.icon = (offer["relic"] as RelicData).icon
 		if reason != "":
 			button.text += "   " + reason
 			button.disabled = true
