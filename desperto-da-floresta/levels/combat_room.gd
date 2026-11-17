@@ -8,11 +8,20 @@ extends Node2D
 
 signal cleared
 
+const PEDESTAL_SCENE: PackedScene = preload("res://entities/pickups/relic_pedestal.tscn")
+
 ## Inimigo padrão: nasce nos pontos que não escolhem o próprio (ex.: corpo_seco.tscn).
 ## Pode ficar vazio se todo ponto de nascimento for um EnemySpawn com inimigo definido.
 @export var enemy_scene: PackedScene
 ## Folhas que a sala dá de bônus ao ser limpa (além das que os inimigos soltam).
 @export var clear_bonus_leaves: int = 10
+## Ao limpar a sala, uma relíquia aparece sobre um pedestal perto da porta (GDD: combate dá
+## relíquia garantida; as raras só na loja e no Curupira).
+@export var give_relic_reward: bool = true
+@export var relic_pool: RelicPool = preload("res://relics/relic_pool.tres")
+@export var reward_rarities: Array[RelicData.Rarity] = [RelicData.Rarity.COMMON, RelicData.Rarity.UNCOMMON]
+## Onde o pedestal fica, relativo à porta de saída.
+@export var reward_offset: Vector2 = Vector2(-80.0, 22.0)
 
 @onready var _spawns: Node = $Spawns
 @onready var _exit: Area2D = $ExitDoor
@@ -83,6 +92,8 @@ func _clear() -> void:
 		_message.text = "Sala limpa!  [%s] na porta para sair" % key
 	# As Folhas que ficaram no chão vão até o Valtair (dá um instante para as últimas caírem).
 	get_tree().create_timer(0.6).timeout.connect(_attract_leaves)
+	if _spawn_relic_reward():
+		_message.text += "\nUma relíquia apareceu: [%s] sobre ela para pegar" % key
 	_message.visible = true
 	cleared.emit()
 
@@ -91,6 +102,20 @@ func _unhandled_input(event: InputEvent) -> void:
 	if _is_cleared and _player_at_exit and not _exit_requested and event.is_action_pressed(&"interact"):
 		_exit_requested = true
 		EventBus.room_exit_requested.emit()
+
+
+## Cria o pedestal com uma relíquia que o jogador ainda não tem. Retorna se criou.
+func _spawn_relic_reward() -> bool:
+	if not give_relic_reward or relic_pool == null:
+		return false
+	var relic: RelicData = relic_pool.pick_random(RunState.relics, reward_rarities)
+	if relic == null:
+		return false
+	var pedestal: RelicPedestal = PEDESTAL_SCENE.instantiate() as RelicPedestal
+	pedestal.relic = relic
+	add_child(pedestal)
+	pedestal.global_position = _exit.global_position + reward_offset
+	return true
 
 
 func _attract_leaves() -> void:

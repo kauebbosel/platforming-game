@@ -17,6 +17,8 @@ const PRICE_BY_RARITY: Dictionary = {
 @export var display_name: String = ""
 @export_multiline var description: String = ""
 @export var rarity: Rarity = Rarity.COMMON
+## Ícone 16x16 (mostrado na recompensa de sala e na loja).
+@export var icon: Texture2D
 @export var modifiers: Array[StatModifier] = []
 
 
