@@ -4,7 +4,7 @@
 
 [resource]
 script = ExtResource("1_atk")
-id = &"corpo_seco_claw"
+id = &"mapinguari_claw"
 damage = 10
 knockback = Vector2(120, -40)
 startup_frames = 24
