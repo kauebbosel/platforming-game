@@ -20,10 +20,12 @@ func _ready() -> void:
 	EventBus.room_exit_requested.connect(go_to_map)
 
 
-## Começa uma run nova no início do mapa.
 func start_run() -> void:
 	RunState.start_run()
-	go_to_map()
+	await go_to_map()
+	# Introdução de cada partida (GDD 7.1): poema pulável por cima do mapa.
+	if _map != null:
+		await DialogueBox.play(_map, Dialogues.INTRO)
 
 
 func go_to_map() -> void:

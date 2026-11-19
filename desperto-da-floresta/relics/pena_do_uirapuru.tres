@@ -1,7 +1,8 @@
-[gd_resource type="Resource" script_class="RelicData" format=3 uid="uid://dmv73wkmg8tri"]
+[gd_resource type="Resource" script_class="RelicData" format=3 uid="uid://cuxb2kmk1dxnh"]
 
 [ext_resource type="Script" uid="uid://cbhc7m3mnl4x8" path="res://data/relic_data.gd" id="1_relic"]
 [ext_resource type="Script" uid="uid://cygivoaksm28k" path="res://data/stat_modifier.gd" id="2_mod"]
+[ext_resource type="Texture2D" uid="uid://cj7hqn81wgu7k" path="res://assets/art/itens/comuns/pena_do_uirapuru.png" id="3_icon"]
 
 [sub_resource type="Resource" id="Resource_mod"]
 script = ExtResource("2_mod")
@@ -13,4 +14,5 @@ script = ExtResource("1_relic")
 id = &"pena_do_uirapuru"
 display_name = "Pena do Uirapuru"
 description = "Aumenta a velocidade de movimentação em 15%."
+icon = ExtResource("3_icon")
 modifiers = Array[ExtResource("2_mod")]([SubResource("Resource_mod")])

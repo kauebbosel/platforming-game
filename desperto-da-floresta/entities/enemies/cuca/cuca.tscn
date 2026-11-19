@@ -1,12 +1,13 @@
 [gd_scene format=3 uid="uid://cgv1iq8h8ewvm"]
 
 [ext_resource type="Script" uid="uid://uvlpb0qh38u5" path="res://entities/enemies/enemy_base.gd" id="1_base"]
-[ext_resource type="Resource" uid="uid://budrfb5egml" path="res://entities/enemies/matinta_perera/matinta_perera.tres" id="2_data"]
+[ext_resource type="Resource" uid="uid://budrfb5egml" path="res://entities/enemies/cuca/cuca.tres" id="2_data"]
 [ext_resource type="Script" uid="uid://b4101c84uef8o" path="res://components/health_component.gd" id="3_health"]
+[ext_resource type="Texture2D" uid="uid://d0y6p3wy8pyub" path="res://assets/art/random/cuca.png" id="3_o2gkp"]
 [ext_resource type="Script" uid="uid://cejkgwdmbli8w" path="res://components/hurtbox.gd" id="4_hurt"]
 [ext_resource type="Script" uid="uid://ch2ofmejjk7ff" path="res://components/ranged_attack_component.gd" id="5_ranged"]
 [ext_resource type="PackedScene" path="res://entities/projectile/projectile.tscn" id="6_proj"]
-[ext_resource type="Resource" path="res://entities/enemies/matinta_perera/matinta_shot.tres" id="7_shot"]
+[ext_resource type="Resource" path="res://entities/enemies/cuca/cuca_shot.tres" id="7_shot"]
 [ext_resource type="Script" uid="uid://cc1elcc4a2csf" path="res://entities/enemies/enemy_state_machine.gd" id="8_sm"]
 [ext_resource type="Script" uid="uid://i2b5mhphsltu" path="res://entities/enemies/states/idle.gd" id="9_idle"]
 [ext_resource type="Script" uid="uid://dsviqti4mwpsi" path="res://entities/enemies/states/hover.gd" id="10_hover"]
@@ -15,31 +16,22 @@
 [ext_resource type="Script" uid="uid://br84h82kilyjj" path="res://entities/enemies/states/dead.gd" id="13_dead"]
 
 [sub_resource type="RectangleShape2D" id="body_shape"]
-size = Vector2(22, 16)
-
-[sub_resource type="Gradient" id="placeholder_gradient"]
-colors = PackedColorArray(0.2, 0.1, 0.3, 1, 0.9, 0.4, 0.9, 1)
-
-[sub_resource type="GradientTexture2D" id="placeholder_tex"]
-gradient = SubResource("placeholder_gradient")
-width = 28
-height = 18
-fill_from = Vector2(0, 0.5)
-fill_to = Vector2(1, 0.5)
+size = Vector2(20, 24)
 
 [sub_resource type="RectangleShape2D" id="hurt_shape"]
-size = Vector2(26, 20)
+size = Vector2(26, 30)
 
 [node name="MatintaPerera" type="CharacterBody2D" unique_id=1690022505]
 collision_layer = 4
 script = ExtResource("1_base")
 data = ExtResource("2_data")
+art_faces_right = false
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=199088125]
 shape = SubResource("body_shape")
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=501902549]
-texture = SubResource("placeholder_tex")
+texture = ExtResource("3_o2gkp")
 
 [node name="Health" type="Node" parent="." unique_id=1628232483]
 script = ExtResource("3_health")

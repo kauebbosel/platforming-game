@@ -1,7 +1,8 @@
-[gd_resource type="Resource" script_class="RelicData" format=3 uid="uid://bluhpkhqpr4u2"]
+[gd_resource type="Resource" script_class="RelicData" format=3 uid="uid://dcwaql4nui0jr"]
 
 [ext_resource type="Script" uid="uid://cbhc7m3mnl4x8" path="res://data/relic_data.gd" id="1_relic"]
 [ext_resource type="Script" uid="uid://cygivoaksm28k" path="res://data/stat_modifier.gd" id="2_mod"]
+[ext_resource type="Texture2D" uid="uid://cy0a7v34kmvay" path="res://assets/art/itens/comuns/presa_da_onca.png" id="3_icon"]
 
 [sub_resource type="Resource" id="Resource_mod"]
 script = ExtResource("2_mod")
@@ -13,4 +14,5 @@ script = ExtResource("1_relic")
 id = &"presa_da_onca"
 display_name = "Presa da Onça"
 description = "Aumenta em 25% o dano dos golpes corpo a corpo."
+icon = ExtResource("3_icon")
 modifiers = Array[ExtResource("2_mod")]([SubResource("Resource_mod")])

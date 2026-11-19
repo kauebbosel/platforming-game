@@ -118,6 +118,17 @@ func refresh_stats() -> void:
 	health.changed.emit(health.health, health.max_health)
 
 
+## Dá uma relíquia ao Valtair agora (recompensa de sala, loja...): guarda na run, recalcula os
+## números e, se ela aumenta a vida máxima, a vida nova já vem cheia.
+func grant_relic(relic: RelicData) -> void:
+	var old_max: int = health.max_health
+	RunState.add_relic(relic)
+	refresh_stats()
+	var gained: int = health.max_health - old_max
+	if gained > 0:
+		health.heal(gained)
+
+
 func is_dead() -> bool:
 	return health.health <= 0
 
