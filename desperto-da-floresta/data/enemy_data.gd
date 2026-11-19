@@ -72,3 +72,16 @@ extends Resource
 @export_group("Morte")
 ## Tempo parado antes de sumir.
 @export var death_linger: float = 0.6
+
+@export_group("Chefe")
+## Falso = os golpes só fazem o chefe piscar, sem interromper o ataque dele (sem stunlock).
+@export var hurt_interrupts: bool = true
+
+@export_group("Salto descendente")
+@export var slam_windup: float = 0.55
+@export var slam_jump_speed: float = -280.0
+@export var slam_max_air_speed: float = 200.0
+
+@export_group("Sementes")
+@export var seed_count: int = 3
+@export var seed_spread_degrees: float = 14.0

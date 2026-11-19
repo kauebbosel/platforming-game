@@ -1,6 +1,6 @@
-[gd_resource type="Resource" script_class="ProjectileData" format=3]
+[gd_resource type="Resource" script_class="ProjectileData" format=3 uid="uid://cor5bc2qdakio"]
 
-[ext_resource type="Script" path="res://data/projectile_data.gd" id="1_proj"]
+[ext_resource type="Script" uid="uid://dyg5ax1nobbjq" path="res://data/projectile_data.gd" id="1_proj"]
 
 [resource]
 script = ExtResource("1_proj")
@@ -8,5 +8,5 @@ speed = 170.0
 lifetime = 2.5
 damage = 10
 team = &"enemy"
-tint = Color(0.9, 0.3, 1, 1)
+tint = Color(0.95, 0.48, 0.1, 1)
 knockback = Vector2(120, -30)

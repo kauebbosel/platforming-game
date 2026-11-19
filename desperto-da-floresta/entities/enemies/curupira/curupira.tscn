@@ -1,0 +1,114 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://entities/enemies/enemy_base.gd" id="1_base"]
+[ext_resource type="Resource" path="res://entities/enemies/curupira/curupira.tres" id="2_data"]
+[ext_resource type="Script" path="res://components/health_component.gd" id="3_health"]
+[ext_resource type="Script" path="res://components/hurtbox.gd" id="4_hurt"]
+[ext_resource type="Script" path="res://components/attack_component.gd" id="5_atk"]
+[ext_resource type="Script" path="res://components/hitbox.gd" id="6_hit"]
+[ext_resource type="Resource" path="res://entities/enemies/curupira/curupira_charge.tres" id="7_charge"]
+[ext_resource type="Resource" path="res://entities/enemies/curupira/curupira_slam.tres" id="8_slam"]
+[ext_resource type="Script" path="res://components/ranged_attack_component.gd" id="9_ranged"]
+[ext_resource type="PackedScene" path="res://entities/projectile/projectile.tscn" id="10_proj"]
+[ext_resource type="Resource" path="res://entities/enemies/curupira/curupira_seed.tres" id="11_seed"]
+[ext_resource type="Script" path="res://entities/enemies/enemy_state_machine.gd" id="12_sm"]
+[ext_resource type="Script" path="res://entities/enemies/states/idle.gd" id="13_idle"]
+[ext_resource type="Script" path="res://entities/enemies/states/boss_chase.gd" id="14_chase"]
+[ext_resource type="Script" path="res://entities/enemies/states/charge.gd" id="15_charge"]
+[ext_resource type="Script" path="res://entities/enemies/states/slam.gd" id="16_slam"]
+[ext_resource type="Script" path="res://entities/enemies/states/seeds.gd" id="17_seeds"]
+[ext_resource type="Script" path="res://entities/enemies/states/hurt.gd" id="18_hurt"]
+[ext_resource type="Script" path="res://entities/enemies/states/dead.gd" id="19_dead"]
+[ext_resource type="Texture2D" path="res://assets/art/random/curupira.png" id="20_tex"]
+
+[sub_resource type="RectangleShape2D" id="body_shape"]
+size = Vector2(26, 28)
+
+[sub_resource type="RectangleShape2D" id="hurt_shape"]
+size = Vector2(30, 34)
+
+[sub_resource type="RectangleShape2D" id="charge_shape"]
+size = Vector2(40, 28)
+
+[sub_resource type="RectangleShape2D" id="slam_shape"]
+size = Vector2(80, 26)
+
+[node name="Curupira" type="CharacterBody2D"]
+collision_layer = 4
+script = ExtResource("1_base")
+data = ExtResource("2_data")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -14)
+shape = SubResource("body_shape")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("20_tex")
+offset = Vector2(0, -15)
+
+[node name="Health" type="Node" parent="."]
+script = ExtResource("3_health")
+max_health = 120
+
+[node name="Hurtbox" type="Area2D" parent="."]
+position = Vector2(0, -17)
+script = ExtResource("4_hurt")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox"]
+shape = SubResource("hurt_shape")
+
+[node name="AttackComponent" type="Node2D" parent="."]
+script = ExtResource("5_atk")
+attack_data = ExtResource("7_charge")
+
+[node name="Hitbox" type="Area2D" parent="AttackComponent"]
+position = Vector2(18, -14)
+script = ExtResource("6_hit")
+team = &"enemy"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="AttackComponent/Hitbox"]
+shape = SubResource("charge_shape")
+
+[node name="SlamAttack" type="Node2D" parent="."]
+script = ExtResource("5_atk")
+attack_data = ExtResource("8_slam")
+
+[node name="Hitbox" type="Area2D" parent="SlamAttack"]
+position = Vector2(0, -13)
+script = ExtResource("6_hit")
+team = &"enemy"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="SlamAttack/Hitbox"]
+shape = SubResource("slam_shape")
+
+[node name="RangedAttackComponent" type="Node" parent="."]
+script = ExtResource("9_ranged")
+projectile_scene = ExtResource("10_proj")
+projectile_data = ExtResource("11_seed")
+muzzle_offset = Vector2(12, -20)
+cooldown = 0.0
+
+[node name="StateMachine" type="Node" parent="." node_paths=PackedStringArray("initial_state")]
+script = ExtResource("12_sm")
+initial_state = NodePath("Idle")
+
+[node name="Idle" type="Node" parent="StateMachine"]
+script = ExtResource("13_idle")
+
+[node name="Chase" type="Node" parent="StateMachine"]
+script = ExtResource("14_chase")
+
+[node name="Charge" type="Node" parent="StateMachine"]
+script = ExtResource("15_charge")
+
+[node name="Slam" type="Node" parent="StateMachine"]
+script = ExtResource("16_slam")
+
+[node name="Seeds" type="Node" parent="StateMachine"]
+script = ExtResource("17_seeds")
+
+[node name="Hurt" type="Node" parent="StateMachine"]
+script = ExtResource("18_hurt")
+
+[node name="Dead" type="Node" parent="StateMachine"]
+script = ExtResource("19_dead")

@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="RelicData" format=3 uid="uid://dxkud0khp4e06"]
+
+[ext_resource type="Script" uid="uid://cbhc7m3mnl4x8" path="res://data/relic_data.gd" id="1_relic"]
+[ext_resource type="Script" uid="uid://cygivoaksm28k" path="res://data/stat_modifier.gd" id="2_mod"]
+
+[sub_resource type="Resource" id="Resource_mod"]
+script = ExtResource("2_mod")
+stat = &"boitata_death_save"
+op = 0
+
+[resource]
+script = ExtResource("1_relic")
+id = &"bencao_do_curupira"
+display_name = "Benção do Curupira"
+description = "Impede uma morte, somente na luta contra o Boitatá."
+rarity = 2
+modifiers = Array[ExtResource("2_mod")]([SubResource("Resource_mod")])
