@@ -27,6 +27,9 @@ const BLESSING: RelicData = preload("res://relics/bencao_do_curupira.tres")
 @export var victory_delay: float = 1.0
 ## Pausa antes de o chefe começar a atacar.
 @export var boss_start_delay: float = 1.2
+## Segundos, depois da vitória, em que os pedestais e a porta ainda não aceitam o [E].
+## Protege quem estava apertando [E] para pular o diálogo de pegar/sair sem querer.
+@export var reward_arm_delay: float = 1.2
 
 @onready var _spawn: Marker2D = $BossSpawn
 @onready var _exit: Area2D = $ExitDoor
@@ -38,6 +41,8 @@ var _is_cleared: bool = false
 var _defeat_shown: bool = false
 var _player_at_exit: bool = false
 var _exit_requested: bool = false
+var _exit_warned: bool = false
+var _reward_ready_ms: int = 0
 
 
 func _ready() -> void:
@@ -94,6 +99,7 @@ func _give_rewards() -> void:
 		player.grant_relic(BLESSING)
 	if clear_bonus_leaves > 0:
 		EventBus.leaves_gained.emit(clear_bonus_leaves)
+	_reward_ready_ms = Time.get_ticks_msec() + int(reward_arm_delay * 1000.0)
 	var spawned: int = _spawn_relic_choices()
 	if _bar != null:
 		_bar.queue_free()
@@ -123,6 +129,7 @@ func _spawn_relic_choices() -> int:
 	for i in count:
 		var pedestal: RelicPedestal = PEDESTAL_SCENE.instantiate() as RelicPedestal
 		pedestal.relic = options[i]
+		pedestal.arm_delay = reward_arm_delay
 		add_child(pedestal)
 		pedestal.global_position = _exit.global_position + choice_offset + Vector2(choice_spacing * i, 0.0)
 		pedestals.append(pedestal)
@@ -136,9 +143,20 @@ func _spawn_relic_choices() -> int:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if _is_cleared and _exit.visible and _player_at_exit and not _exit_requested and event.is_action_pressed(&"interact"):
-		_exit_requested = true
-		EventBus.room_exit_requested.emit()
+	if not (_is_cleared and _exit.visible and _player_at_exit and not _exit_requested):
+		return
+	if not event.is_action_pressed(&"interact"):
+		return
+	# Logo depois da vitória o [E] ainda é do diálogo: não deixa sair por engano.
+	if Time.get_ticks_msec() < _reward_ready_ms:
+		return
+	# Sair sem escolher uma relíquia perde a recompensa: pede para confirmar uma vez.
+	if not _exit_warned and not get_tree().get_nodes_in_group(&"relic_pedestals").is_empty():
+		_exit_warned = true
+		_message.text = "Você ainda não escolheu uma relíquia!\n[%s] de novo na porta para sair assim mesmo" % InputHint.key_name(&"interact")
+		return
+	_exit_requested = true
+	EventBus.room_exit_requested.emit()
 
 
 func _attract_leaves() -> void:

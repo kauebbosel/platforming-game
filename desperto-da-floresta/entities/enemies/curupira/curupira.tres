@@ -19,5 +19,4 @@ leaves_max = 0
 death_linger = 1.0
 hurt_interrupts = false
 slam_windup = 0.4
-seed_count = 4
 seed_spread_degrees = 12.0
