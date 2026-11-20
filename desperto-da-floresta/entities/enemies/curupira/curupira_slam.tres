@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="AttackData" format=3]
+
+[ext_resource type="Script" path="res://data/attack_data.gd" id="1_atk"]
+
+[resource]
+script = ExtResource("1_atk")
+id = &"curupira_slam"
+damage = 15
+knockback = Vector2(140, -150)
+startup_frames = 0
+active_frames = 8
+recovery_frames = 45

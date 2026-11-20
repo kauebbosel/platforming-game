@@ -92,8 +92,18 @@ func _on_hit_received(_damage: int, _source: Node, knockback: Vector2) -> void:
 	# O golpe fatal emite `died` antes deste sinal; não deixa o Hurt sobrescrever o Dead.
 	if is_dead():
 		return
+	# Chefe: só pisca, não perde o ataque em andamento (EnemyData.hurt_interrupts).
+	if not data.hurt_interrupts:
+		_flash_hit()
+		return
 	last_knockback = knockback
 	state_machine.transition_to("hurt")
+
+
+## Pisca de vermelho sem mexer no `modulate` (que os estados usam para indicar o ataque).
+func _flash_hit() -> void:
+	sprite.self_modulate = Color(1.0, 0.4, 0.4)
+	create_tween().tween_property(sprite, "self_modulate", Color.WHITE, 0.12)
 
 
 func _on_died() -> void:

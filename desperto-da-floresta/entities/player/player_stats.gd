@@ -40,3 +40,6 @@ extends Resource
 @export var ranged_damage_mult: float = 1.0
 @export var attack_speed_mult: float = 1.0
 @export var projectile_speed_mult: float = 1.0
+
+## Mortes que a Benção do Curupira impede na luta contra o Boitatá (o chefe consome).
+@export var boitata_death_save: int = 0

@@ -14,7 +14,12 @@ const FRAMES: Dictionary = {
 }
 
 var relic: RelicData
+## Segundos, depois de aparecer, em que o pedestal ainda NÃO aceita o `interact` (fica meio
+## apagado). Evita pegar a relíquia sem querer, por exemplo ao pular um diálogo apertando [E].
+## 0 = aceita na hora (padrão).
+var arm_delay: float = 0.0
 
+var _arm_left: float = 0.0
 var _player: Player
 var _near: bool = false
 var _taken: bool = false
@@ -28,10 +33,20 @@ func _ready() -> void:
 	body_entered.connect(_on_body_entered)
 	body_exited.connect(_on_body_exited)
 	_build_visuals()
+	_arm_left = arm_delay
+	if _arm_left > 0.0:
+		modulate.a = 0.5
+
+
+func _process(delta: float) -> void:
+	if _arm_left > 0.0:
+		_arm_left -= delta
+		if _arm_left <= 0.0:
+			modulate.a = 1.0
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if _near and not _taken and event.is_action_pressed(&"interact"):
+	if _near and not _taken and _arm_left <= 0.0 and event.is_action_pressed(&"interact"):
 		_take()
 
 

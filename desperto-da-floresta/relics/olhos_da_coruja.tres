@@ -7,12 +7,12 @@
 [sub_resource type="Resource" id="Resource_mod"]
 script = ExtResource("2_mod")
 stat = &"projectile_speed_mult"
-value = 1.3
+value = 1.7
 
 [resource]
 script = ExtResource("1_relic")
 id = &"olhos_da_coruja"
 display_name = "Olhos da Coruja"
-description = "Aumenta em 30% a velocidade dos projéteis do bodoque."
+description = "Aumenta em 70% a velocidade dos projéteis do bodoque."
 icon = ExtResource("3_icon")
 modifiers = Array[ExtResource("2_mod")]([SubResource("Resource_mod")])

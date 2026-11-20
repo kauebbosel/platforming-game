@@ -11,6 +11,7 @@ const SHOP_SCENE: String = "res://levels/shop_clearing.tscn"
 ## Troque pelo caminho do menu quando ele existir. Enquanto o arquivo não existir,
 ## a morte definitiva só avisa no Output e começa uma run nova.
 const MAIN_MENU_PATH: String = "res://ui/main_menu.tscn"
+const CURUPIRA_ROOM_SCENE: String = "res://levels/curupira_room.tscn"
 
 var _map: MapScreen
 
@@ -75,6 +76,8 @@ func _on_map_node_chosen(id: String, kind: int) -> void:
 			enter_room(REST_SITE_SCENE)
 		MapLayout.Kind.MERCADORA:
 			enter_room(SHOP_SCENE)
+		MapLayout.Kind.MID_BOSS:
+			enter_room(CURUPIRA_ROOM_SCENE)
 		_:
 			push_warning("SceneManager: o nó '%s' (%s) ainda não tem sala. Siga para o próximo nó." % [id, MapLayout.KIND_NAMES[kind]])
 
