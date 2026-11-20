@@ -11,6 +11,7 @@ const SHOP_SCENE: String = "res://levels/shop_clearing.tscn"
 ## Troque pelo caminho do menu quando ele existir. Enquanto o arquivo não existir,
 ## a morte definitiva só avisa no Output e começa uma run nova.
 const MAIN_MENU_PATH: String = "res://ui/main_menu.tscn"
+const GAME_OVER_SCENE: String = "res://ui/game_over.tscn"
 
 var _map: MapScreen
 
@@ -52,6 +53,13 @@ func restart_room() -> void:
 		RunState.restore_room_entry()
 	get_tree().reload_current_scene()
 
+## Morte dentro de uma run é definitiva (GDD 10): Game Over e, depois, o menu principal.
+func go_to_game_over() -> void:
+	if ResourceLoader.exists(GAME_OVER_SCENE):
+		get_tree().change_scene_to_file(GAME_OVER_SCENE)
+	else:
+		push_warning("SceneManager: a tela de Game Over não existe (%s). Indo direto ao menu." % GAME_OVER_SCENE)
+		go_to_main_menu()
 
 func go_to_main_menu() -> void:
 	var was_in_run: bool = RunState.run_active
@@ -80,7 +88,8 @@ func _on_map_node_chosen(id: String, kind: int) -> void:
 
 
 func _on_player_death_finished(permanent: bool) -> void:
-	if permanent:
-		go_to_main_menu()
+	# Dentro de uma run a morte é sempre definitiva. Fora dela (ex.: test_arena) a sala reinicia.
+	if permanent or RunState.run_active:
+		go_to_game_over()
 	else:
 		restart_room()
