@@ -11,6 +11,21 @@ static func ensure_actions() -> void:
 	_ensure(&"attack", [_key(KEY_J), _key(KEY_X), _mouse(MOUSE_BUTTON_LEFT), _joy_button(JOY_BUTTON_X)])
 
 
+## Controles do GDD (seção 4): o pulo é SÓ no Espaço; [W]/[S] sobem e descem em cipós e [S]
+## também desce de plataformas finas. Chamada pelo SceneManager ao iniciar o jogo.
+## Cria move_up/move_down se não existirem e tira o W (e a seta para cima) do pulo.
+## Se você já ajustou isso no Input Map do editor, esta função não muda nada.
+static func apply_controls() -> void:
+	_ensure(&"move_up", [_key(KEY_W), _key(KEY_UP), _joy_axis(JOY_AXIS_LEFT_Y, -1.0)])
+	_ensure(&"move_down", [_key(KEY_S), _key(KEY_DOWN), _joy_axis(JOY_AXIS_LEFT_Y, 1.0)])
+	if not InputMap.has_action(&"jump"):
+		return
+	for event in InputMap.action_get_events(&"jump"):
+		var key: InputEventKey = event as InputEventKey
+		if key != null and (key.physical_keycode == KEY_W or key.physical_keycode == KEY_UP):
+			InputMap.action_erase_event(&"jump", event)
+
+
 static func _ensure(action: StringName, events: Array) -> void:
 	if InputMap.has_action(action):
 		return

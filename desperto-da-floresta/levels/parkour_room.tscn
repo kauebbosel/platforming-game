@@ -1,0 +1,56 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://levels/parkour_room.gd" id="1_room"]
+[ext_resource type="PackedScene" path="res://levels/parkour/layout_a.tscn" id="2_a"]
+[ext_resource type="PackedScene" path="res://levels/parkour/layout_b.tscn" id="3_b"]
+[ext_resource type="PackedScene" path="res://levels/parkour/layout_c.tscn" id="4_c"]
+[ext_resource type="Script" path="res://entities/pickups/reward_chest.gd" id="5_chest"]
+[ext_resource type="PackedScene" path="res://entities/player/player.tscn" id="6_player"]
+[ext_resource type="Script" path="res://components/camera/camera_rig.gd" id="7_cam"]
+[ext_resource type="PackedScene" path="res://ui/hud.tscn" id="8_hud"]
+
+[sub_resource type="RectangleShape2D" id="door_shape"]
+size = Vector2(26, 44)
+
+[node name="ParkourRoom" type="Node2D"]
+script = ExtResource("1_room")
+layouts = Array[PackedScene]([ExtResource("2_a"), ExtResource("3_b"), ExtResource("4_c")])
+
+[node name="Course" type="Node2D" parent="."]
+
+[node name="Chest" type="Area2D" parent="."]
+script = ExtResource("5_chest")
+
+[node name="ExitDoor" type="Area2D" parent="."]
+collision_layer = 64
+collision_mask = 2
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ExitDoor"]
+shape = SubResource("door_shape")
+
+[node name="Polygon2D" type="Polygon2D" parent="ExitDoor"]
+color = Color(0.95, 0.8, 0.35, 0.9)
+polygon = PackedVector2Array(-13, -22, 13, -22, 13, 22, -13, 22)
+
+[node name="Player" parent="." instance=ExtResource("6_player")]
+
+[node name="CameraRig" type="Camera2D" parent="." node_paths=PackedStringArray("target")]
+script = ExtResource("7_cam")
+mode = 1
+target = NodePath("../Player")
+
+[node name="Hud" parent="." instance=ExtResource("8_hud")]
+
+[node name="Overlay" type="CanvasLayer" parent="."]
+
+[node name="Message" type="Label" parent="Overlay"]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -200.0
+offset_top = 34.0
+offset_right = 200.0
+offset_bottom = 70.0
+grow_horizontal = 2
+theme_override_font_sizes/font_size = 10
+horizontal_alignment = 1
