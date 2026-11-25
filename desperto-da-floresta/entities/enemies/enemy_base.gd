@@ -107,6 +107,7 @@ func _flash_hit() -> void:
 
 
 func _on_died() -> void:
+	get_tree().call_group(&"player", &"on_enemy_killed")  # Maldição do Mapinguari
 	_drop_leaves()
 	state_machine.transition_to("dead")
 

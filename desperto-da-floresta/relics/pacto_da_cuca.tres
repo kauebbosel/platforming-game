@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="RelicData" format=3 uid="uid://ds3ad5uilsxh4"]
+
+[ext_resource type="Script" uid="uid://cbhc7m3mnl4x8" path="res://data/relic_data.gd" id="1_relic"]
+[ext_resource type="Script" uid="uid://cygivoaksm28k" path="res://data/stat_modifier.gd" id="2_mod"]
+[ext_resource type="Texture2D" uid="uid://bcjls4bksejyi" path="res://assets/art/itens/raros/pacto_da_cuca.png" id="3_icon"]
+
+[sub_resource type="Resource" id="Resource_mod0"]
+script = ExtResource("2_mod")
+stat = &"ranged_damage_mult"
+value = 1.5
+
+[sub_resource type="Resource" id="Resource_mod1"]
+script = ExtResource("2_mod")
+stat = &"max_health_bonus"
+op = 0
+value = -20
+
+[resource]
+script = ExtResource("1_relic")
+id = &"pacto_da_cuca"
+display_name = "Pacto da Cuca"
+description = "Aumenta em 50% o dano do bodoque, mas reduz sua vida máxima em 20."
+rarity = 2
+icon = ExtResource("3_icon")
+modifiers = Array[ExtResource("2_mod")]([SubResource("Resource_mod0"), SubResource("Resource_mod1")])

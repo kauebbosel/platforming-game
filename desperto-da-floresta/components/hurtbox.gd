@@ -53,6 +53,13 @@ func _physics_process(delta: float) -> void:
 		invulnerability_ended.emit()
 
 
+## Dá invulnerabilidade por `duration` s (ex.: depois de uma relíquia salvar o Valtair da morte).
+func grant_invulnerability(duration: float) -> void:
+	_invulnerable_left = maxf(_invulnerable_left, duration)
+	set_physics_process(true)
+	invulnerability_started.emit(duration)
+
+
 func _start_invulnerability() -> void:
 	_invulnerable_left = invulnerability_time
 	set_physics_process(true)

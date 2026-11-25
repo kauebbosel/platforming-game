@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="RelicData" format=3 uid="uid://bc8bpgybm8jyk"]
+
+[ext_resource type="Script" uid="uid://cbhc7m3mnl4x8" path="res://data/relic_data.gd" id="1_relic"]
+[ext_resource type="Script" uid="uid://cygivoaksm28k" path="res://data/stat_modifier.gd" id="2_mod"]
+[ext_resource type="Texture2D" uid="uid://dgbqe7kdftx85" path="res://assets/art/itens/incomuns/espinhos_da_floresta.png" id="3_icon"]
+
+[sub_resource type="Resource" id="Resource_mod0"]
+script = ExtResource("2_mod")
+stat = &"thorns_damage"
+op = 0
+value = 5
+
+[resource]
+script = ExtResource("1_relic")
+id = &"espinhos_da_floresta"
+display_name = "Espinhos da Floresta"
+description = "Inimigos que machucam você recebem 5 de dano de volta."
+rarity = 1
+icon = ExtResource("3_icon")
+modifiers = Array[ExtResource("2_mod")]([SubResource("Resource_mod0")])

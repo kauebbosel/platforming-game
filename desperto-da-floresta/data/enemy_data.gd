@@ -73,6 +73,10 @@ extends Resource
 ## Tempo parado antes de sumir.
 @export var death_linger: float = 0.6
 
+@export_group("Dano")
+## O dano deste inimigo é de FOGO (a Escama do Boitatá reduz).
+@export var deals_fire: bool = false
+
 @export_group("Chefe")
 ## Falso = os golpes só fazem o chefe piscar, sem interromper o ataque dele (sem stunlock).
 @export var hurt_interrupts: bool = true

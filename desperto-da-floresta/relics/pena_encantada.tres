@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="RelicData" format=3 uid="uid://w1fqlyg2h1jw"]
+
+[ext_resource type="Script" uid="uid://cbhc7m3mnl4x8" path="res://data/relic_data.gd" id="1_relic"]
+[ext_resource type="Script" uid="uid://cygivoaksm28k" path="res://data/stat_modifier.gd" id="2_mod"]
+[ext_resource type="Texture2D" uid="uid://bvnlnwjy43v7m" path="res://assets/art/itens/incomuns/pena_encantada.png" id="3_icon"]
+
+[sub_resource type="Resource" id="Resource_mod0"]
+script = ExtResource("2_mod")
+stat = &"post_dash_damage_mult"
+value = 1.6
+
+[resource]
+script = ExtResource("1_relic")
+id = &"pena_encantada"
+display_name = "Pena Encantada"
+description = "O primeiro golpe depois de um dash causa 60% de dano a mais."
+rarity = 1
+icon = ExtResource("3_icon")
+modifiers = Array[ExtResource("2_mod")]([SubResource("Resource_mod0")])

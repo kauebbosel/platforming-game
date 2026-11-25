@@ -33,6 +33,9 @@ var _timer: float = 0.0
 ## Multiplicadores do dono (relíquias do Valtair). Os inimigos ficam em 1.0.
 var damage_multiplier: float = 1.0
 var speed_multiplier: float = 1.0
+## Opcional: função () -> float chamada NO INSTANTE em que a hitbox liga, para multiplicadores
+## que dependem da situação (no ar, vida baixa, logo após o dash...). O Player preenche.
+var dynamic_damage_mult: Callable = Callable()
 
 
 func _ready() -> void:
@@ -87,7 +90,8 @@ func cancel() -> void:
 func enter_active() -> void:
 	state = State.ACTIVE
 	_timer = attack_data.active_time()
-	hitbox.damage = roundi(attack_data.damage * damage_multiplier)
+	var extra: float = dynamic_damage_mult.call() if dynamic_damage_mult.is_valid() else 1.0
+	hitbox.damage = roundi(attack_data.damage * damage_multiplier * extra)
 	hitbox.knockback = attack_data.knockback
 	hitbox.activate()
 	_set_vfx_visible(true)

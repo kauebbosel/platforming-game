@@ -53,6 +53,14 @@ func add_relic(relic: RelicData) -> void:
 
 
 ## Aplica todas as relíquias da run a uma cópia do PlayerStats.
+## Remove uma relíquia da run (as que se consomem: Proteção da Caipora e Benção do Curupira).
+func consume_relic(relic: RelicData) -> void:
+	for i in relics.size():
+		if relics[i].id == relic.id:
+			relics.remove_at(i)
+			return
+
+
 func apply_relics(stats: Object) -> void:
 	for relic in relics:
 		relic.apply_to(stats)

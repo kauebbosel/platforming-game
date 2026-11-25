@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="RelicData" format=3 uid="uid://b3rhpmbisr2vy"]
+
+[ext_resource type="Script" uid="uid://cbhc7m3mnl4x8" path="res://data/relic_data.gd" id="1_relic"]
+[ext_resource type="Script" uid="uid://cygivoaksm28k" path="res://data/stat_modifier.gd" id="2_mod"]
+[ext_resource type="Texture2D" uid="uid://cnd4u4hx48cry" path="res://assets/art/itens/incomuns/flor_da_vitoria_regia.png" id="3_icon"]
+
+[sub_resource type="Resource" id="Resource_mod0"]
+script = ExtResource("2_mod")
+stat = &"heal_on_clear"
+op = 0
+value = 8
+
+[resource]
+script = ExtResource("1_relic")
+id = &"flor_da_vitoria_regia"
+display_name = "Flor da Vitória-Régia"
+description = "Recupera 8 de vida ao concluir um combate."
+rarity = 1
+icon = ExtResource("3_icon")
+modifiers = Array[ExtResource("2_mod")]([SubResource("Resource_mod0")])

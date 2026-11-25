@@ -103,7 +103,7 @@ func buy(offer: Dictionary) -> bool:
 
 
 func _heal_amount() -> int:
-	return ceili(_player.health.max_health * heal_fraction)
+	return _player.scale_heal(ceili(_player.health.max_health * heal_fraction))
 
 
 func _unhandled_input(event: InputEvent) -> void:

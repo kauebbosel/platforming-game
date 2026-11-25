@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="RelicData" format=3 uid="uid://wxdjxtr5pdjm"]
+
+[ext_resource type="Script" uid="uid://cbhc7m3mnl4x8" path="res://data/relic_data.gd" id="1_relic"]
+[ext_resource type="Script" uid="uid://cygivoaksm28k" path="res://data/stat_modifier.gd" id="2_mod"]
+[ext_resource type="Texture2D" uid="uid://blkp0j3dfracf" path="res://assets/art/itens/incomuns/garras_do_gaviao.png" id="3_icon"]
+
+[sub_resource type="Resource" id="Resource_mod0"]
+script = ExtResource("2_mod")
+stat = &"air_damage_mult"
+value = 1.35
+
+[resource]
+script = ExtResource("1_relic")
+id = &"garras_do_gaviao"
+display_name = "Garras do Gavião"
+description = "Golpes dados no ar causam 35% de dano a mais."
+rarity = 1
+icon = ExtResource("3_icon")
+modifiers = Array[ExtResource("2_mod")]([SubResource("Resource_mod0")])

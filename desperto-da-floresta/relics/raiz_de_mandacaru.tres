@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="RelicData" format=3 uid="uid://cq5gx6t1wt7pj"]
+
+[ext_resource type="Script" uid="uid://cbhc7m3mnl4x8" path="res://data/relic_data.gd" id="1_relic"]
+[ext_resource type="Script" uid="uid://cygivoaksm28k" path="res://data/stat_modifier.gd" id="2_mod"]
+[ext_resource type="Texture2D" uid="uid://byldey4hxfy3d" path="res://assets/art/itens/comuns/raiz_de_mandacaru.png" id="3_icon"]
+
+[sub_resource type="Resource" id="Resource_mod0"]
+script = ExtResource("2_mod")
+stat = &"dash_cooldown"
+value = 0.7
+
+[resource]
+script = ExtResource("1_relic")
+id = &"raiz_de_mandacaru"
+display_name = "Raiz de Mandacaru"
+description = "Reduz em 30% o tempo para usar o dash de novo."
+icon = ExtResource("3_icon")
+modifiers = Array[ExtResource("2_mod")]([SubResource("Resource_mod0")])

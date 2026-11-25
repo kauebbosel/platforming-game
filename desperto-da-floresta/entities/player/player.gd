@@ -5,6 +5,8 @@ extends CharacterBody2D
 
 ## Emitido quando a pausa da morte acaba. `permanent` = true leva ao menu principal.
 signal death_sequence_finished(permanent: bool)
+## Uma relíquia (Proteção da Caipora ou Benção do Curupira) impediu a morte e foi consumida.
+signal death_saved(relic: RelicData)
 
 @export var stats: PlayerStats
 
@@ -36,11 +38,27 @@ var air_dashes_left: int = 0
 var permanent_death: bool = false
 
 ## Cipó (Vine) em que o corpo está encostando agora; quem preenche é o próprio Vine.
+## Luta final: a Benção do Curupira só vale enquanto isto for true (a sala do Boitatá liga).
+var in_boitata_fight: bool = false
+
 var nearby_vine: Node2D = null
 ## Tempo, depois de soltar um cipó, em que não dá para agarrar de novo.
 var climb_regrab_left: float = 0.0
 
 # Valores de fábrica; as relíquias são aplicadas sobre uma CÓPIA em refresh_stats().
+## Abaixo desta fração da vida máxima conta como "vida baixa" (Dente de Piranha).
+const LOW_HEALTH_THRESHOLD: float = 0.35
+## Janela, depois de um dash, em que o próximo golpe conta como "logo após o dash" (Pena Encantada).
+const POST_DASH_DAMAGE_WINDOW: float = 1.5
+## Invulnerabilidade logo depois de uma relíquia salvar o Valtair da morte.
+const DEATH_SAVE_INVULNERABILITY: float = 1.5
+
+var _prev_state_name: String = ""
+var _post_dash_damage_left: float = 0.0
+var _speed_boost_left: float = 0.0
+## A velocidade de movimento "de fábrica + relíquias", sem o bônus temporário do dash.
+var _relic_move_speed: float = 120.0
+
 var _base_stats: PlayerStats
 var _base_max_health: int = 100
 
@@ -56,6 +74,9 @@ func _ready() -> void:
 	state_machine.init(self)
 	_connect_hud_events()
 	health.died.connect(_on_health_died)
+	health.damaged.connect(_on_damaged)
+	attack.dynamic_damage_mult = _melee_extra_mult
+	ranged.dynamic_damage_mult = _ranged_extra_mult
 	refresh_stats()
 	if not RunState.run_active:
 		health.reset()  # sem run: vida cheia (com a vida máxima das relíquias)
@@ -81,6 +102,8 @@ func _physics_process(delta: float) -> void:
 	# Morto: sem dash nem tiro. O estado Dead cuida do resto.
 	if is_dead():
 		return
+
+	_track_dash_effects(delta)
 
 	# Cipós e plataformas finas: [W]/[S] perto de um cipó escalam; [S] em cima de uma plataforma
 	# fina desce por ela. Ambos antes dos estados, como o dash.
@@ -178,6 +201,8 @@ func refresh_stats() -> void:
 	RunState.apply_relics(stats)
 	health.max_health = _base_max_health + stats.max_health_bonus
 	health.damage_taken_mult = stats.damage_taken_mult
+	health.fire_damage_taken_mult = stats.fire_damage_taken_mult
+	_relic_move_speed = stats.move_speed
 	attack.damage_multiplier = stats.melee_damage_mult
 	attack.speed_multiplier = stats.attack_speed_mult
 	ranged.damage_multiplier = stats.ranged_damage_mult
@@ -202,7 +227,127 @@ func is_dead() -> bool:
 
 
 func _on_health_died() -> void:
+	if _try_death_save():
+		return
 	state_machine.transition_to("dead")
+
+
+## Proteção da Caipora (qualquer luta) ou Benção do Curupira (só na luta final): impede a morte,
+## devolve parte da vida, dá uma invulnerabilidade curta e CONSOME a relíquia.
+## Na luta final usa a Benção primeiro, para guardar a Proteção.
+func _try_death_save() -> bool:
+	var relic: RelicData = _find_death_save_relic()
+	if relic == null:
+		return false
+	RunState.consume_relic(relic)
+	refresh_stats()
+	health.set_current(maxi(1, ceili(health.max_health * stats.death_save_heal_fraction)))
+	hurtbox.grant_invulnerability(DEATH_SAVE_INVULNERABILITY)
+	death_saved.emit(relic)
+	_show_message("%s te protegeu!" % relic.display_name)
+	return true
+
+
+func _find_death_save_relic() -> RelicData:
+	var general: RelicData = null
+	var final_fight: RelicData = null
+	for relic in RunState.relics:
+		for modifier in relic.modifiers:
+			if modifier.stat == &"boitata_death_save" and final_fight == null:
+				final_fight = relic
+			elif modifier.stat == &"death_saves" and general == null:
+				general = relic
+	if in_boitata_fight and final_fight != null:
+		return final_fight
+	return general
+
+
+## Texto curto no alto da tela (some sozinho).
+func _show_message(text: String) -> void:
+	var layer: CanvasLayer = CanvasLayer.new()
+	layer.layer = 40
+	var label: Label = Label.new()
+	label.text = text
+	label.anchor_left = 0.5
+	label.anchor_right = 0.5
+	label.offset_left = -160.0
+	label.offset_right = 160.0
+	label.offset_top = 60.0
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.add_theme_font_size_override("font_size", 10)
+	label.add_theme_constant_override("outline_size", 3)
+	label.add_theme_color_override("font_outline_color", Color(0.05, 0.05, 0.1))
+	layer.add_child(label)
+	add_child(layer)
+	get_tree().create_timer(2.5).timeout.connect(func() -> void:
+		if is_instance_valid(layer):
+			layer.queue_free()
+	)
+
+
+## Espinhos da Floresta: quem machuca o Valtair leva dano de volta (se tiver Health).
+func _on_damaged(_amount: int, source: Node) -> void:
+	if stats.thorns_damage <= 0 or source == null or source == self:
+		return
+	var target: HealthComponent = source.get_node_or_null("Health") as HealthComponent
+	if target != null:
+		target.take_damage(stats.thorns_damage, self)
+
+
+## Dash: marca o fim dele (Pena Encantada e Coração da Mula) e aplica o bônus de velocidade.
+func _track_dash_effects(delta: float) -> void:
+	var current: String = String(state_machine.current_state.name)
+	if _prev_state_name == "Dash" and current != "Dash":
+		_post_dash_damage_left = POST_DASH_DAMAGE_WINDOW
+		_speed_boost_left = stats.post_dash_speed_time
+	_prev_state_name = current
+	if _post_dash_damage_left > 0.0:
+		_post_dash_damage_left -= delta
+	if _speed_boost_left > 0.0:
+		_speed_boost_left -= delta
+	stats.move_speed = _relic_move_speed * (stats.post_dash_speed_mult if _speed_boost_left > 0.0 else 1.0)
+
+
+## Multiplicador extra do golpe corpo a corpo, calculado no instante do golpe.
+func _melee_extra_mult() -> float:
+	var mult: float = _low_health_mult()
+	if not is_on_floor():
+		mult *= stats.air_damage_mult  # Garras do Gavião
+	if _post_dash_damage_left > 0.0:
+		mult *= stats.post_dash_damage_mult  # Pena Encantada: só o primeiro golpe
+		_post_dash_damage_left = 0.0
+	return mult
+
+
+func _ranged_extra_mult() -> float:
+	return _low_health_mult()
+
+
+func _low_health_mult() -> float:
+	if health.health <= health.max_health * LOW_HEALTH_THRESHOLD:
+		return stats.low_health_damage_mult  # Dente de Piranha
+	return 1.0
+
+
+## Cura com a eficácia das curas do Valtair (a Maldição do Mapinguari reduz).
+func scale_heal(amount: int) -> int:
+	return maxi(1, roundi(amount * stats.healing_mult)) if amount > 0 else 0
+
+
+func heal(amount: int) -> void:
+	health.heal(scale_heal(amount))
+
+
+## Chamado pela sala de combate quando ela é concluída (Flor da Vitória-Régia).
+func on_room_cleared() -> void:
+	if stats.heal_on_clear > 0:
+		heal(stats.heal_on_clear)
+
+
+## Chamado por todo inimigo que morre (Maldição do Mapinguari). Não sofre a redução de curas.
+func on_enemy_killed() -> void:
+	if stats.heal_on_kill > 0 and not is_dead():
+		health.heal(stats.heal_on_kill)
 
 
 func can_jump() -> bool:

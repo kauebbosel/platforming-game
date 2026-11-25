@@ -41,5 +41,32 @@ extends Resource
 @export var attack_speed_mult: float = 1.0
 @export var projectile_speed_mult: float = 1.0
 
-## Mortes que a Benção do Curupira impede na luta contra o Boitatá (o chefe consome).
+## Mortes que a Benção do Curupira impede na luta contra o Boitatá (a relíquia é consumida).
 @export var boitata_death_save: int = 0
+
+@export_group("Relíquias de comportamento")
+## Multiplica as Folhas de bônus ao concluir um combate (Amuleto de Madeira).
+@export var leaf_bonus_mult: float = 1.0
+## Dano do PRIMEIRO golpe corpo a corpo logo depois de um dash (Pena Encantada).
+@export var post_dash_damage_mult: float = 1.0
+## Dano dos golpes corpo a corpo dados no ar (Garras do Gavião).
+@export var air_damage_mult: float = 1.0
+## Dano (golpe e bodoque) quando a vida está baixa, abaixo de 35% (Dente de Piranha).
+@export var low_health_damage_mult: float = 1.0
+## Vida recuperada ao concluir um combate (Flor da Vitória-Régia).
+@export var heal_on_clear: int = 0
+## Dano devolvido a quem machuca o Valtair (Espinhos da Floresta).
+@export var thorns_damage: int = 0
+## Multiplica o dano de FOGO recebido (Escama do Boitatá). Quem causa fogo: EnemyData.deals_fire.
+@export var fire_damage_taken_mult: float = 1.0
+## Depois de um dash, a velocidade vai a este múltiplo por `post_dash_speed_time` s (Coração da Mula).
+@export var post_dash_speed_mult: float = 1.0
+@export var post_dash_speed_time: float = 0.0
+## Vida recuperada ao derrotar um inimigo (Maldição do Mapinguari). Não sofre a redução de curas.
+@export var heal_on_kill: int = 0
+## Multiplica TODAS as curas (loja, fogueira, Flor da Vitória-Régia). Maldição do Mapinguari reduz.
+@export var healing_mult: float = 1.0
+## Mortes que a Proteção da Caipora impede em qualquer luta (a relíquia é consumida).
+@export var death_saves: int = 0
+## Fração da vida máxima com que o Valtair volta quando uma relíquia o salva da morte.
+@export var death_save_heal_fraction: float = 0.5

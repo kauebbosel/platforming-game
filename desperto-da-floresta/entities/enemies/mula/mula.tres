@@ -17,3 +17,4 @@ leaves_min = 3
 leaves_max = 5
 hurt_duration = 0.15
 knockback_scale = 0.3
+deals_fire = true

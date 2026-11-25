@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="RelicData" format=3 uid="uid://oeow8myb1830"]
+
+[ext_resource type="Script" uid="uid://cbhc7m3mnl4x8" path="res://data/relic_data.gd" id="1_relic"]
+[ext_resource type="Script" uid="uid://cygivoaksm28k" path="res://data/stat_modifier.gd" id="2_mod"]
+[ext_resource type="Texture2D" uid="uid://c2cia88dhtrmy" path="res://assets/art/itens/raros/coracao_da_mula_sem_cabeca.png" id="3_icon"]
+
+[sub_resource type="Resource" id="Resource_mod0"]
+script = ExtResource("2_mod")
+stat = &"post_dash_speed_mult"
+value = 1.4
+
+[sub_resource type="Resource" id="Resource_mod1"]
+script = ExtResource("2_mod")
+stat = &"post_dash_speed_time"
+op = 0
+value = 1.2
+
+[resource]
+script = ExtResource("1_relic")
+id = &"coracao_da_mula_sem_cabeca"
+display_name = "Coração da Mula sem Cabeça"
+description = "Depois de um dash, você corre 40% mais rápido por 1,2 s."
+rarity = 2
+icon = ExtResource("3_icon")
+modifiers = Array[ExtResource("2_mod")]([SubResource("Resource_mod0"), SubResource("Resource_mod1")])

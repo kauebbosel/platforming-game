@@ -85,9 +85,14 @@ func _clear() -> void:
 	_exit.visible = true
 	_exit.set_deferred("monitoring", true)
 	var key: String = InputHint.key_name(&"interact")
-	if clear_bonus_leaves > 0:
-		EventBus.leaves_gained.emit(clear_bonus_leaves)
-		_message.text = "Sala limpa!  +%d Folhas  [%s] na porta para sair" % [clear_bonus_leaves, key]
+	var player: Player = get_tree().get_first_node_in_group(&"player") as Player
+	var bonus: int = clear_bonus_leaves
+	if player != null:
+		bonus = roundi(clear_bonus_leaves * player.stats.leaf_bonus_mult)  # Amuleto de Madeira
+		player.on_room_cleared()  # Flor da Vitória-Régia
+	if bonus > 0:
+		EventBus.leaves_gained.emit(bonus)
+		_message.text = "Sala limpa!  +%d Folhas  [%s] na porta para sair" % [bonus, key]
 	else:
 		_message.text = "Sala limpa!  [%s] na porta para sair" % key
 	# As Folhas que ficaram no chão vão até o Valtair (dá um instante para as últimas caírem).

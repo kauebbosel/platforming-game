@@ -13,6 +13,8 @@ signal died
 var health: int
 ## Multiplicador do dano recebido (relíquias do Valtair; os inimigos ficam em 1.0).
 var damage_taken_mult: float = 1.0
+## Multiplicador extra para dano de FOGO (Escama do Boitatá). Quem causa fogo: EnemyData.deals_fire.
+var fire_damage_taken_mult: float = 1.0
 
 func _ready() -> void:
 	health = max_health
@@ -22,14 +24,25 @@ func take_damage(amount: int, source: Node = null) -> void:
 	if health <= 0:
 		return
 		
-	if not is_equal_approx(damage_taken_mult, 1.0):
-		amount = maxi(1, roundi(amount * damage_taken_mult))
+	var mult: float = damage_taken_mult
+	if not is_equal_approx(fire_damage_taken_mult, 1.0) and _is_fire(source):
+		mult *= fire_damage_taken_mult
+	if not is_equal_approx(mult, 1.0):
+		amount = maxi(1, roundi(amount * mult))
 	
 	health = maxi(health - amount, 0)
 	damaged.emit(amount, source)
 	changed.emit(health, max_health)
 	if health == 0:
 		died.emit()
+
+
+## O golpe veio de um inimigo que causa fogo? (lê EnemyData.deals_fire do atacante, se tiver)
+func _is_fire(source: Node) -> bool:
+	if source == null:
+		return false
+	var data: Variant = source.get("data")
+	return data != null and "deals_fire" in data and data.deals_fire
 
 
 func heal(amount: int) -> void:

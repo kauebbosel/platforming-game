@@ -44,6 +44,8 @@ func try_fire_toward(direction: Vector2) -> bool:
 ## Multiplicadores do dono (relíquias do Valtair). Os inimigos ficam em 1.0.
 var damage_multiplier: float = 1.0
 var speed_multiplier: float = 1.0
+## Opcional: função () -> float chamada a cada disparo (ver AttackComponent.dynamic_damage_mult).
+var dynamic_damage_mult: Callable = Callable()
 
 
 func _fire(direction: Vector2, side: int) -> bool:
@@ -55,7 +57,8 @@ func _fire(direction: Vector2, side: int) -> bool:
 	var projectile: Projectile = projectile_scene.instantiate() as Projectile
 	body.get_parent().add_child(projectile)
 	projectile.global_position = body.global_position + Vector2(muzzle_offset.x * side, muzzle_offset.y)
-	projectile.setup(projectile_data, direction, body, damage_multiplier, speed_multiplier)
+	var extra: float = dynamic_damage_mult.call() if dynamic_damage_mult.is_valid() else 1.0
+	projectile.setup(projectile_data, direction, body, damage_multiplier * extra, speed_multiplier)
 
 	_cooldown_left = cooldown
 	fired.emit()
