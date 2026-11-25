@@ -44,3 +44,11 @@ const CURUPIRA_DERROTA: Array = [
 	[CURUPIRA, "Então aprenda a respeitar aquilo que não conhece. A floresta não perdoa quem ignora seus perigos."],
 	[CURUPIRA, "Sua jornada termina aqui, por enquanto."],
 ]
+
+## Epílogo, depois de derrotar o Boitatá (GDD 7). Narração, sem nome na caixa.
+const EPILOGO: Array = [
+	["", "Após enfrentar o Boitatá, Valtair finalmente encontra uma possível saída da floresta."],
+	["", "Mas permanece a dúvida. Ele realmente esteve naquele lugar? Foi um sonho? Ou a floresta sobrenatural realmente existe?"],
+	["", "Independentemente da resposta, Valtair não é mais a mesma pessoa que entrou na floresta."],
+	["", "As histórias que antes eram apenas \"histórias para boi dormir\" passam a representar algo diferente: uma parte de sua própria cultura que ele nunca havia parado para compreender."],
+]
