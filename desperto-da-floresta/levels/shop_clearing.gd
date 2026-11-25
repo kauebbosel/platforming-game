@@ -165,6 +165,19 @@ func _rebuild_rows(focus_index: int) -> void:
 		_rows.add_child(button)
 		if i == focus_index and not button.disabled:
 			focus_button = button
+	# Sem relíquia nova à venda (a pessoa já tem todas as do pool): avisa, em vez de parecer quebrado.
+	var has_relic_offer: bool = false
+	for offer in _offers:
+		if offer["relic"] != null:
+			has_relic_offer = true
+	if relic_pool != null and not has_relic_offer:
+		var empty_row: Button = Button.new()
+		empty_row.add_theme_font_size_override("font_size", 10)
+		empty_row.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		empty_row.text = "Sem relíquias novas à venda (você já tem todas)"
+		empty_row.disabled = true
+		empty_row.focus_mode = Control.FOCUS_NONE
+		_rows.add_child(empty_row)
 	var target: Button = focus_button if focus_button != null else first_enabled
 	if target != null:
 		target.grab_focus.call_deferred()

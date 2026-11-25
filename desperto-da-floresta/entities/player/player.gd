@@ -8,6 +8,9 @@ signal death_sequence_finished(permanent: bool)
 
 @export var stats: PlayerStats
 
+## Estado de escalar cipós (criado por código em _ready se o nó "Climb" não existir na cena).
+const CLIMB_STATE: Script = preload("res://entities/player/states/climb.gd")
+
 @onready var state_machine: StateMachine = $StateMachine
 @onready var sprite: Sprite2D = $Visual/Sprite2D
 ## Nós filhos diretos do Player (os nomes precisam ser exatamente estes).
@@ -32,6 +35,11 @@ var air_dashes_left: int = 0
 ## Por enquanto só o F4 liga isso; depois, o RunState decide.
 var permanent_death: bool = false
 
+## Cipó (Vine) em que o corpo está encostando agora; quem preenche é o próprio Vine.
+var nearby_vine: Node2D = null
+## Tempo, depois de soltar um cipó, em que não dá para agarrar de novo.
+var climb_regrab_left: float = 0.0
+
 # Valores de fábrica; as relíquias são aplicadas sobre uma CÓPIA em refresh_stats().
 var _base_stats: PlayerStats
 var _base_max_health: int = 100
@@ -44,6 +52,7 @@ func _ready() -> void:
 	assert(stats != null, "ERRO: O recurso PlayerStats.tres precisa ser atribuído no Inspetor do Player!")
 	_base_stats = stats
 	_base_max_health = health.max_health
+	_ensure_climb_state()
 	state_machine.init(self)
 	_connect_hud_events()
 	health.died.connect(_on_health_died)
@@ -73,6 +82,13 @@ func _physics_process(delta: float) -> void:
 	if is_dead():
 		return
 
+	# Cipós e plataformas finas: [W]/[S] perto de um cipó escalam; [S] em cima de uma plataforma
+	# fina desce por ela. Ambos antes dos estados, como o dash.
+	if climb_regrab_left > 0.0:
+		climb_regrab_left -= delta
+	_try_start_climb()
+	_try_drop_through()
+
 	# Dash: transição global, vale em qualquer estado (inclusive durante o golpe, que é cancelado).
 	# Roda antes dos estados, então a troca já vale neste mesmo frame.
 	if Input.is_action_just_pressed("dodge") and can_dash():
@@ -81,6 +97,57 @@ func _physics_process(delta: float) -> void:
 	# Ataque ranged: ação paralela, não trava o movimento. Bloqueado durante o golpe corpo a corpo.
 	if Input.is_action_just_pressed("ranged_attack") and not attack.is_attacking():
 		ranged.try_fire(facing)
+
+
+## Garante o estado "Climb" na máquina de estados (assim não precisa mexer na cena do Player).
+func _ensure_climb_state() -> void:
+	if state_machine.get_node_or_null("Climb") != null:
+		return
+	var climb: Node = CLIMB_STATE.new()
+	climb.name = "Climb"
+	state_machine.add_child(climb)
+
+
+func _try_start_climb() -> void:
+	if nearby_vine == null or climb_regrab_left > 0.0:
+		return
+	var state_name: String = String(state_machine.current_state.name)
+	if state_name not in ["Idle", "Run", "Jump", "Fall"]:
+		return
+	if Input.is_action_pressed(&"move_up") or Input.is_action_pressed(&"move_down"):
+		state_machine.transition_to("climb")
+
+
+## [S] parado ou andando em cima de uma plataforma fina (one-way): atravessa para baixo.
+func _try_drop_through() -> void:
+	if not Input.is_action_just_pressed(&"move_down") or not is_on_floor():
+		return
+	var state_name: String = String(state_machine.current_state.name)
+	if state_name != "Idle" and state_name != "Run":
+		return
+	drop_through_floor(0.3)
+
+
+## Se o chão sob o Valtair é uma plataforma fina (one-way), ignora ela por `duration` segundos,
+## para ele atravessar. Devolve true se conseguiu. Chão sólido não é atravessado.
+func drop_through_floor(duration: float) -> bool:
+	var hit: KinematicCollision2D = move_and_collide(Vector2(0.0, 2.0), true)
+	if hit == null:
+		return false
+	var platform: CollisionObject2D = hit.get_collider() as CollisionObject2D
+	if platform == null:
+		return false
+	var owner_id: int = platform.shape_find_owner(hit.get_collider_shape_index())
+	var shape_node: CollisionShape2D = platform.shape_owner_get_owner(owner_id) as CollisionShape2D
+	if shape_node == null or not shape_node.one_way_collision:
+		return false
+	add_collision_exception_with(platform)
+	velocity.y = maxf(velocity.y, 40.0)
+	get_tree().create_timer(duration).timeout.connect(func() -> void:
+		if is_instance_valid(platform) and is_instance_valid(self):
+			remove_collision_exception_with(platform)
+	)
+	return true
 
 
 func apply_gravity(delta: float) -> void:

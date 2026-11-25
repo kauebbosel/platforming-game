@@ -1,0 +1,239 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://levels/parkour/parkour_layout.gd" id="1_layout"]
+[ext_resource type="Script" path="res://entities/hazards/vine.gd" id="3_vine"]
+[ext_resource type="Script" path="res://entities/hazards/spikes.gd" id="4_spikes"]
+
+[sub_resource type="RectangleShape2D" id="shape_1"]
+size = Vector2(200, 40)
+
+[sub_resource type="RectangleShape2D" id="shape_2"]
+size = Vector2(100, 8)
+
+[sub_resource type="RectangleShape2D" id="shape_3"]
+size = Vector2(200, 8)
+
+[sub_resource type="RectangleShape2D" id="shape_4"]
+size = Vector2(200, 8)
+
+[sub_resource type="RectangleShape2D" id="shape_5"]
+size = Vector2(200, 8)
+
+[sub_resource type="RectangleShape2D" id="shape_6"]
+size = Vector2(200, 8)
+
+[sub_resource type="RectangleShape2D" id="shape_7"]
+size = Vector2(804, 40)
+
+[sub_resource type="RectangleShape2D" id="shape_8"]
+size = Vector2(200, 8)
+
+[sub_resource type="RectangleShape2D" id="shape_9"]
+size = Vector2(20, 480)
+
+[sub_resource type="RectangleShape2D" id="shape_10"]
+size = Vector2(20, 330)
+
+[sub_resource type="RectangleShape2D" id="shape_11"]
+size = Vector2(20, 1120)
+
+[sub_resource type="RectangleShape2D" id="shape_12"]
+size = Vector2(20, 1120)
+
+[node name="LayoutC" type="Node2D"]
+script = ExtResource("1_layout")
+bounds = Rect2(0, 0, 1024, 720)
+layout_name = "Poco"
+
+[node name="Background" type="ColorRect" parent="."]
+z_index = -10
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 1044.0
+offset_bottom = 740.0
+color = Color(0.07, 0.14, 0.11, 1)
+
+[node name="Ground_1" type="StaticBody2D" parent="."]
+position = Vector2(100.0, 220.0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Ground_1"]
+shape = SubResource("shape_1")
+
+[node name="Visual" type="Polygon2D" parent="Ground_1"]
+color = Color(0.25, 0.2, 0.15, 1)
+polygon = PackedVector2Array(-100.0, -20.0, 100.0, -20.0, 100.0, 20.0, -100.0, 20.0)
+
+[node name="Top" type="Polygon2D" parent="Ground_1"]
+color = Color(0.3, 0.5, 0.2, 1)
+polygon = PackedVector2Array(-100.0, -20.0, 100.0, -20.0, 100.0, -17.0, -100.0, -17.0)
+
+[node name="Plat_2" type="StaticBody2D" parent="."]
+position = Vector2(250.0, 204.0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Plat_2"]
+shape = SubResource("shape_2")
+one_way_collision = true
+
+[node name="Visual" type="Polygon2D" parent="Plat_2"]
+color = Color(0.38, 0.3, 0.2, 1)
+polygon = PackedVector2Array(-50.0, -4.0, 50.0, -4.0, 50.0, 4.0, -50.0, 4.0)
+
+[node name="Top" type="Polygon2D" parent="Plat_2"]
+color = Color(0.3, 0.5, 0.2, 1)
+polygon = PackedVector2Array(-50.0, -4.0, 50.0, -4.0, 50.0, -1.0, -50.0, -1.0)
+
+[node name="Plat_3" type="StaticBody2D" parent="."]
+position = Vector2(320.0, 284.0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Plat_3"]
+shape = SubResource("shape_3")
+one_way_collision = true
+
+[node name="Visual" type="Polygon2D" parent="Plat_3"]
+color = Color(0.38, 0.3, 0.2, 1)
+polygon = PackedVector2Array(-100.0, -4.0, 100.0, -4.0, 100.0, 4.0, -100.0, 4.0)
+
+[node name="Top" type="Polygon2D" parent="Plat_3"]
+color = Color(0.3, 0.5, 0.2, 1)
+polygon = PackedVector2Array(-100.0, -4.0, 100.0, -4.0, 100.0, -1.0, -100.0, -1.0)
+
+[node name="Plat_4" type="StaticBody2D" parent="."]
+position = Vector2(320.0, 364.0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Plat_4"]
+shape = SubResource("shape_4")
+one_way_collision = true
+
+[node name="Visual" type="Polygon2D" parent="Plat_4"]
+color = Color(0.38, 0.3, 0.2, 1)
+polygon = PackedVector2Array(-100.0, -4.0, 100.0, -4.0, 100.0, 4.0, -100.0, 4.0)
+
+[node name="Top" type="Polygon2D" parent="Plat_4"]
+color = Color(0.3, 0.5, 0.2, 1)
+polygon = PackedVector2Array(-100.0, -4.0, 100.0, -4.0, 100.0, -1.0, -100.0, -1.0)
+
+[node name="Plat_5" type="StaticBody2D" parent="."]
+position = Vector2(320.0, 444.0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Plat_5"]
+shape = SubResource("shape_5")
+one_way_collision = true
+
+[node name="Visual" type="Polygon2D" parent="Plat_5"]
+color = Color(0.38, 0.3, 0.2, 1)
+polygon = PackedVector2Array(-100.0, -4.0, 100.0, -4.0, 100.0, 4.0, -100.0, 4.0)
+
+[node name="Top" type="Polygon2D" parent="Plat_5"]
+color = Color(0.3, 0.5, 0.2, 1)
+polygon = PackedVector2Array(-100.0, -4.0, 100.0, -4.0, 100.0, -1.0, -100.0, -1.0)
+
+[node name="Plat_6" type="StaticBody2D" parent="."]
+position = Vector2(320.0, 524.0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Plat_6"]
+shape = SubResource("shape_6")
+one_way_collision = true
+
+[node name="Visual" type="Polygon2D" parent="Plat_6"]
+color = Color(0.38, 0.3, 0.2, 1)
+polygon = PackedVector2Array(-100.0, -4.0, 100.0, -4.0, 100.0, 4.0, -100.0, 4.0)
+
+[node name="Top" type="Polygon2D" parent="Plat_6"]
+color = Color(0.3, 0.5, 0.2, 1)
+polygon = PackedVector2Array(-100.0, -4.0, 100.0, -4.0, 100.0, -1.0, -100.0, -1.0)
+
+[node name="Ground_7" type="StaticBody2D" parent="."]
+position = Vector2(622.0, 620.0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Ground_7"]
+shape = SubResource("shape_7")
+
+[node name="Visual" type="Polygon2D" parent="Ground_7"]
+color = Color(0.25, 0.2, 0.15, 1)
+polygon = PackedVector2Array(-402.0, -20.0, 402.0, -20.0, 402.0, 20.0, -402.0, 20.0)
+
+[node name="Top" type="Polygon2D" parent="Ground_7"]
+color = Color(0.3, 0.5, 0.2, 1)
+polygon = PackedVector2Array(-402.0, -20.0, 402.0, -20.0, 402.0, -17.0, -402.0, -17.0)
+
+[node name="Plat_8" type="StaticBody2D" parent="."]
+position = Vector2(900.0, 304.0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Plat_8"]
+shape = SubResource("shape_8")
+one_way_collision = true
+
+[node name="Visual" type="Polygon2D" parent="Plat_8"]
+color = Color(0.38, 0.3, 0.2, 1)
+polygon = PackedVector2Array(-100.0, -4.0, 100.0, -4.0, 100.0, 4.0, -100.0, 4.0)
+
+[node name="Top" type="Polygon2D" parent="Plat_8"]
+color = Color(0.3, 0.5, 0.2, 1)
+polygon = PackedVector2Array(-100.0, -4.0, 100.0, -4.0, 100.0, -1.0, -100.0, -1.0)
+
+[node name="Wall_9" type="StaticBody2D" parent="."]
+position = Vector2(210.0, 480.0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Wall_9"]
+shape = SubResource("shape_9")
+
+[node name="Visual" type="Polygon2D" parent="Wall_9"]
+color = Color(0.2, 0.16, 0.12, 1)
+polygon = PackedVector2Array(-10.0, -240.0, 10.0, -240.0, 10.0, 240.0, -10.0, 240.0)
+
+[node name="Wall_10" type="StaticBody2D" parent="."]
+position = Vector2(430.0, 395.0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Wall_10"]
+shape = SubResource("shape_10")
+
+[node name="Visual" type="Polygon2D" parent="Wall_10"]
+color = Color(0.2, 0.16, 0.12, 1)
+polygon = PackedVector2Array(-10.0, -165.0, 10.0, -165.0, 10.0, 165.0, -10.0, 165.0)
+
+[node name="WallL_11" type="StaticBody2D" parent="."]
+position = Vector2(-10.0, 360.0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="WallL_11"]
+shape = SubResource("shape_11")
+
+[node name="Visual" type="Polygon2D" parent="WallL_11"]
+color = Color(0.1,0.1,0.1,1)
+polygon = PackedVector2Array(-10.0, -560.0, 10.0, -560.0, 10.0, 560.0, -10.0, 560.0)
+
+[node name="WallR_12" type="StaticBody2D" parent="."]
+position = Vector2(1034.0, 360.0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="WallR_12"]
+shape = SubResource("shape_12")
+
+[node name="Visual" type="Polygon2D" parent="WallR_12"]
+color = Color(0.1,0.1,0.1,1)
+polygon = PackedVector2Array(-10.0, -560.0, 10.0, -560.0, 10.0, 560.0, -10.0, 560.0)
+
+[node name="Vine1" type="Area2D" parent="."]
+position = Vector2(828, 300)
+script = ExtResource("3_vine")
+length = 300.0
+
+[node name="Spikes1" type="Area2D" parent="."]
+position = Vector2(560, 600)
+script = ExtResource("4_spikes")
+width = 44.0
+
+[node name="Spikes2" type="Area2D" parent="."]
+position = Vector2(700, 600)
+script = ExtResource("4_spikes")
+width = 44.0
+
+[node name="PlayerStart" type="Marker2D" parent="."]
+position = Vector2(60, 200)
+
+[node name="ChestSpot" type="Marker2D" parent="."]
+position = Vector2(935, 300)
+
+[node name="PedestalSpot" type="Marker2D" parent="."]
+position = Vector2(880, 300)
+
+[node name="ExitSpot" type="Marker2D" parent="."]
+position = Vector2(985, 300)

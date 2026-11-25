@@ -13,7 +13,7 @@ const TELEGRAPH_COLOR: Color = Color(0.95, 0.85, 0.4)
 ## Ponto do Valtair que ele mira (o meio do corpo; a origem do Valtair fica nos pés).
 const AIM_OFFSET: Vector2 = Vector2(0.0, -16.0)
 ## Tempo entre uma semente e a seguinte, em segundos.
-const BURST_INTERVAL: float = 0.4
+const BURST_INTERVAL: float = 0.14
 ## Variação aleatória do ângulo de cada semente, em graus (para mais ou para menos).
 ## Mantenha pequena: ângulos grandes mandam a semente para o chão ou para o teto.
 const JITTER_DEGREES: float = 2.0
