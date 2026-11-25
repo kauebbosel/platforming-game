@@ -16,7 +16,7 @@ var _life: float = 1.0
 
 func _ready() -> void:
 	body_entered.connect(_on_body_entered)
-	hitbox.hit_landed.connect(func(_h: Hurtbox) -> void: queue_free())
+	hitbox.hit_landed.connect(func(_h: Hurtbox) -> void: impact())
 	hitbox.activate()
 
 
@@ -45,4 +45,20 @@ func _physics_process(delta: float) -> void:
 
 
 func _on_body_entered(_body: Node2D) -> void:
+	impact()
+	
+var _impacted: bool = false
+
+func impact() -> void:
+	if _impacted:
+		return
+
+	_impacted = true
+
+	var sfx = $ImpactSFX
+	sfx.reparent(get_tree().current_scene)
+	sfx.pitch_scale = randf_range(0.9, 1.1)
+	sfx.finished.connect(sfx.queue_free)
+	sfx.play(0.2)
+
 	queue_free()

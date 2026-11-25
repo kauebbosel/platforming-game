@@ -16,7 +16,9 @@ var _t: float = 0.0
 
 func enter() -> void:
 	_t = randf() * TAU  # cada voador oscila em fase diferente
-
+	var sfx = enemy.get_node_or_null("FlySFX")
+	if sfx != null:
+		sfx.play()
 
 func physics_update(delta: float) -> void:
 	if not enemy.is_target_alive():
@@ -47,3 +49,13 @@ func physics_update(delta: float) -> void:
 
 	if enemy.attack_cooldown_left <= 0.0 and dx <= data.attack_range:
 		state_machine.transition_to(data.attack_state)
+
+func exit() -> void:
+	var walk_sfx = enemy.get_node_or_null("WalkSFX")
+
+	if walk_sfx != null:
+		walk_sfx.stop()
+		
+	var sfx = enemy.get_node_or_null("FlySFX")
+	if sfx != null:
+		sfx.stop()

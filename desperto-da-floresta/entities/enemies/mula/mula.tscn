@@ -14,6 +14,8 @@
 [ext_resource type="Script" uid="uid://b5edhm6nap1da" path="res://entities/enemies/states/hurt.gd" id="12_hurt"]
 [ext_resource type="Script" uid="uid://br84h82kilyjj" path="res://entities/enemies/states/dead.gd" id="13_dead"]
 [ext_resource type="Texture2D" uid="uid://cqoem8qab8k3k" path="res://assets/art/random/mula.png" id="14_tex"]
+[ext_resource type="AudioStream" uid="uid://cg86ujow8hbq5" path="res://assets/sfx/mula_andar.mp3" id="15_bi4lv"]
+[ext_resource type="AudioStream" uid="uid://crfgoskbnqrb8" path="res://assets/sfx/fogo.mp3" id="16_prwgk"]
 
 [sub_resource type="RectangleShape2D" id="body_shape"]
 size = Vector2(26, 26)
@@ -79,3 +81,22 @@ script = ExtResource("12_hurt")
 
 [node name="Dead" type="Node" parent="StateMachine" unique_id=1182811222]
 script = ExtResource("13_dead")
+
+[node name="ChargeSFX" type="AudioStreamPlayer2D" parent="." unique_id=2000844812]
+stream = ExtResource("15_bi4lv")
+volume_db = 10.0
+pitch_scale = 1.3
+
+[node name="FireSFX" type="AudioStreamPlayer2D" parent="." unique_id=1223268011]
+stream = ExtResource("16_prwgk")
+volume_db = -8.0
+
+[node name="WalkSFX" type="AudioStreamPlayer2D" parent="." unique_id=1861493254]
+stream = ExtResource("15_bi4lv")
+volume_db = -5.0
+pitch_scale = 1.78
+
+[connection signal="active_ended" from="AttackComponent" to="." method="_on_attack_component_active_ended"]
+[connection signal="active_started" from="AttackComponent" to="." method="_on_attack_component_active_started"]
+[connection signal="attack_finished" from="AttackComponent" to="." method="_on_attack_component_attack_finished"]
+[connection signal="attack_started" from="AttackComponent" to="." method="_on_attack_component_attack_started"]

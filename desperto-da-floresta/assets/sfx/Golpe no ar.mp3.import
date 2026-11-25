@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://8t36hjdvl8ix"
+path="res://.godot/imported/Golpe no ar.mp3-5476f0fd37a3299c4c975d713f393905.mp3str"
+
+[deps]
+
+source_file="res://assets/sfx/Golpe no ar.mp3"
+dest_files=["res://.godot/imported/Golpe no ar.mp3-5476f0fd37a3299c4c975d713f393905.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

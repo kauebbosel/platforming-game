@@ -2,6 +2,7 @@
 extends PlayerState
 
 func enter() -> void:
+	player.get_node("JumpSFX").play(0.2)
 	player.start_jump()
 
 func physics_update(delta: float) -> void:

@@ -6,14 +6,16 @@
 [ext_resource type="Texture2D" uid="uid://d0y6p3wy8pyub" path="res://assets/art/random/cuca.png" id="3_o2gkp"]
 [ext_resource type="Script" uid="uid://cejkgwdmbli8w" path="res://components/hurtbox.gd" id="4_hurt"]
 [ext_resource type="Script" uid="uid://ch2ofmejjk7ff" path="res://components/ranged_attack_component.gd" id="5_ranged"]
-[ext_resource type="PackedScene" path="res://entities/projectile/projectile.tscn" id="6_proj"]
-[ext_resource type="Resource" path="res://entities/enemies/cuca/cuca_shot.tres" id="7_shot"]
+[ext_resource type="PackedScene" uid="uid://cv0itw0s0bsnc" path="res://entities/projectile/projectile.tscn" id="6_proj"]
+[ext_resource type="Resource" uid="uid://cor5bc2qdakio" path="res://entities/enemies/cuca/cuca_shot.tres" id="7_shot"]
 [ext_resource type="Script" uid="uid://cc1elcc4a2csf" path="res://entities/enemies/enemy_state_machine.gd" id="8_sm"]
 [ext_resource type="Script" uid="uid://i2b5mhphsltu" path="res://entities/enemies/states/idle.gd" id="9_idle"]
 [ext_resource type="Script" uid="uid://dsviqti4mwpsi" path="res://entities/enemies/states/hover.gd" id="10_hover"]
 [ext_resource type="Script" uid="uid://b5ingpj7q8w8t" path="res://entities/enemies/states/shoot.gd" id="11_shoot"]
 [ext_resource type="Script" uid="uid://b5edhm6nap1da" path="res://entities/enemies/states/hurt.gd" id="12_hurt"]
 [ext_resource type="Script" uid="uid://br84h82kilyjj" path="res://entities/enemies/states/dead.gd" id="13_dead"]
+[ext_resource type="AudioStream" uid="uid://dfjba8eigha2x" path="res://assets/sfx/cuca voando.mp3" id="15_ofcni"]
+[ext_resource type="AudioStream" uid="uid://3h0xx4tsckl8" path="res://assets/sfx/chamas caindo.mp3" id="16_ycuud"]
 
 [sub_resource type="RectangleShape2D" id="body_shape"]
 size = Vector2(20, 24)
@@ -68,3 +70,15 @@ script = ExtResource("12_hurt")
 
 [node name="Dead" type="Node" parent="StateMachine" unique_id=585118066]
 script = ExtResource("13_dead")
+
+[node name="FlySFX" type="AudioStreamPlayer2D" parent="." unique_id=1330519760]
+stream = ExtResource("15_ofcni")
+volume_db = -0.224
+pitch_scale = 1.13
+parameters/looping = true
+
+[node name="FireShotSFX" type="AudioStreamPlayer2D" parent="." unique_id=1732032913]
+stream = ExtResource("16_ycuud")
+volume_db = -5.0
+
+[connection signal="fired" from="RangedAttackComponent" to="FireShotSFX" method="play"]

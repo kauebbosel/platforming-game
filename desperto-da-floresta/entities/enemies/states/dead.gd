@@ -11,6 +11,11 @@ func enter() -> void:
 	enemy.sprite.modulate = Color(0.45, 0.45, 0.45)
 	# O corpo deixa de ser alvo. Adiado: a morte acontece dentro de um callback de física.
 	enemy.hurtbox.set_deferred("monitorable", false)
+	
+	var fly_sfx = enemy.get_node_or_null("FlySFX")
+
+	if fly_sfx != null:
+		fly_sfx.stop()
 
 
 func physics_update(delta: float) -> void:

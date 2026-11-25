@@ -26,4 +26,9 @@ func physics_update(delta: float) -> void:
 			state_machine.transition_to("idle")
 		return
 
+	var was_on_floor: bool = player.is_on_floor()
+
 	player.move_and_slide()
+
+	if not was_on_floor and player.is_on_floor():
+		player.get_node("LandingSFX").play(0.5)

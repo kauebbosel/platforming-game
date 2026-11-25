@@ -26,3 +26,10 @@ func physics_update(delta: float) -> void:
 	player.velocity.x = input_x * player.stats.move_speed
 	player.update_facing_direction(input_x)
 	player.move_and_slide()
+	
+func enter() -> void:
+	player.get_node("WalkSFX").play()
+
+
+func exit() -> void:
+	player.get_node("WalkSFX").stop()

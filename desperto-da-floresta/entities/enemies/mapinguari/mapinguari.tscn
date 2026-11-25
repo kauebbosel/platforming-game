@@ -14,6 +14,8 @@
 [ext_resource type="Script" uid="uid://dhmdope4xtadx" path="res://entities/enemies/states/attack.gd" id="12_85sjd"]
 [ext_resource type="Script" uid="uid://b5edhm6nap1da" path="res://entities/enemies/states/hurt.gd" id="13_fntkt"]
 [ext_resource type="Script" uid="uid://br84h82kilyjj" path="res://entities/enemies/states/dead.gd" id="14_0qhpp"]
+[ext_resource type="AudioStream" uid="uid://c0c5mdgnkrjyx" path="res://assets/sfx/rugido.mp3" id="15_y3dpf"]
+[ext_resource type="AudioStream" uid="uid://dowauxklur23y" path="res://assets/sfx/andar pesado.mp3" id="16_t7svw"]
 
 [sub_resource type="RectangleShape2D" id="body_shape"]
 size = Vector2(36, 36)
@@ -78,3 +80,13 @@ script = ExtResource("13_fntkt")
 
 [node name="Dead" type="Node" parent="StateMachine" unique_id=353983536]
 script = ExtResource("14_0qhpp")
+
+[node name="RoarSFX" type="AudioStreamPlayer2D" parent="." unique_id=1271365443]
+stream = ExtResource("15_y3dpf")
+volume_db = -5.0
+pitch_scale = 0.9
+
+[node name="WalkSFX" type="AudioStreamPlayer2D" parent="." unique_id=1848356511]
+stream = ExtResource("16_t7svw")
+volume_db = -8.0
+parameters/looping = true

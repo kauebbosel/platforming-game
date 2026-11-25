@@ -59,7 +59,12 @@ func physics_update(delta: float) -> void:
 			state_machine.transition_to("idle" if grounded else "fall")
 			return
 
+	var was_on_floor: bool = player.is_on_floor()
+
 	player.move_and_slide()
+
+	if not was_on_floor and player.is_on_floor():
+		player.get_node("LandingSFX").play(0.5)
 
 
 ## O próximo golpe da sequência sai para o lado que o jogador está segurando agora; se ele já

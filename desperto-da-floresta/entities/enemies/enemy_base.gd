@@ -127,3 +127,16 @@ func _spawn_leaf(at: Vector2) -> void:
 	parent.add_child(leaf)
 	leaf.global_position = at
 	leaf.pop(Vector2(randf_range(-60.0, 60.0), randf_range(-160.0, -110.0)))
+
+
+func _on_attack_component_active_started() -> void:
+	$ChargeSFX.play(1)
+	$FireSFX.stop()
+
+
+func _on_attack_component_active_ended() -> void:
+	$ChargeSFX.stop()
+
+
+func _on_attack_component_attack_started() -> void:
+	$FireSFX.play()

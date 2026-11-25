@@ -68,6 +68,13 @@ func _collect() -> void:
 	_collected = true
 	EventBus.leaves_gained.emit(value)
 	_show_popup()
+
+	var sfx = $CoinSFX
+	sfx.reparent(get_tree().current_scene)
+	sfx.pitch_scale = randf_range(0.9, 1.2)
+	sfx.finished.connect(sfx.queue_free)
+	sfx.play()
+
 	queue_free()
 
 

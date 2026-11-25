@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://dfjba8eigha2x"
+path="res://.godot/imported/cuca voando.mp3-ce6e94d95b9d64e0aee2f471b462e0f9.mp3str"
+
+[deps]
+
+source_file="res://assets/sfx/cuca voando.mp3"
+dest_files=["res://.godot/imported/cuca voando.mp3-ce6e94d95b9d64e0aee2f471b462e0f9.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

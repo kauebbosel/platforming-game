@@ -127,6 +127,7 @@ func grant_relic(relic: RelicData) -> void:
 	var gained: int = health.max_health - old_max
 	if gained > 0:
 		health.heal(gained)
+	$RelicSFX.play()
 
 
 func is_dead() -> bool:
@@ -229,3 +230,23 @@ func _unhandled_key_input(event: InputEvent) -> void:
 				print("Relíquia: ", relic.display_name)
 		KEY_F5:  # morte normal (reinicia a sala)
 			health.take_damage(health.health)
+
+
+func _on_attack_component_active_started() -> void:
+		$AttackSFX.pitch_scale = randf_range(0.9, 1.1)
+		$AttackSFX.play(0.5)
+
+
+func _on_attack_component_hit_landed(hurtbox: Hurtbox) -> void:
+	$ImpactSFX.pitch_scale = randf_range(0.9, 1.1)
+	$ImpactSFX.play()
+
+
+func _on_ranged_attack_component_fired() -> void:
+	$BodoqueSFX.pitch_scale = randf_range(0.95, 1.05)
+	$BodoqueSFX.play()
+
+
+func _on_health_damaged(amount: int, source: Node) -> void:
+	$HurtSFX.pitch_scale = randf_range(0.95, 1.05)
+	$HurtSFX.play()

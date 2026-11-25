@@ -1,8 +1,9 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene format=3 uid="uid://cv0itw0s0bsnc"]
 
-[ext_resource type="Script" path="res://entities/projectile/projectile.gd" id="1"]
-[ext_resource type="Script" path="res://components/hitbox.gd" id="2"]
-[ext_resource type="Texture2D" path="res://icon.svg" id="3"]
+[ext_resource type="Script" uid="uid://dt14k1cts1m40" path="res://entities/projectile/projectile.gd" id="1"]
+[ext_resource type="Script" uid="uid://bprjvu4g3lmvd" path="res://components/hitbox.gd" id="2"]
+[ext_resource type="Texture2D" uid="uid://c0uf3otlql62r" path="res://icon.svg" id="3"]
+[ext_resource type="AudioStream" uid="uid://efyblpinl1ib" path="res://assets/sfx/impacto projetil.mp3" id="4_bs1u7"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_body"]
 radius = 4.0
@@ -10,20 +11,25 @@ radius = 4.0
 [sub_resource type="CircleShape2D" id="CircleShape2D_stone"]
 radius = 4.0
 
-[node name="Projectile" type="Area2D"]
+[node name="Projectile" type="Area2D" unique_id=86575565]
 collision_layer = 0
-collision_mask = 1
 script = ExtResource("1")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=139014780]
 shape = SubResource("CircleShape2D_body")
 
-[node name="Sprite2D" type="Sprite2D" parent="."]
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1179883226]
 scale = Vector2(0.1, 0.1)
 texture = ExtResource("3")
 
-[node name="Hitbox" type="Area2D" parent="."]
+[node name="Hitbox" type="Area2D" parent="." unique_id=967667059]
 script = ExtResource("2")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox" unique_id=996526702]
 shape = SubResource("CircleShape2D_stone")
+
+[node name="ImpactSFX" type="AudioStreamPlayer2D" parent="." unique_id=1740216246]
+stream = ExtResource("4_bs1u7")
+volume_db = -5.0
+
+[connection signal="finished" from="ImpactSFX" to="." method="_on_impact_sfx_finished"]

@@ -1,7 +1,8 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://bxhvbgga4ddeu"]
 
-[ext_resource type="Script" path="res://entities/pickups/leaf_pickup.gd" id="1_leaf"]
-[ext_resource type="Texture2D" path="res://assets/art/hud/usar-jogo/gold.png" id="2_tex"]
+[ext_resource type="Script" uid="uid://curnj1g2efv33" path="res://entities/pickups/leaf_pickup.gd" id="1_leaf"]
+[ext_resource type="Texture2D" uid="uid://n0pexmase3hg" path="res://assets/art/hud/usar-jogo/gold.png" id="2_tex"]
+[ext_resource type="AudioStream" uid="uid://r7o0boghctyx" path="res://assets/sfx/coin pickup.mp3" id="3_o2t6v"]
 
 [sub_resource type="CircleShape2D" id="body_shape"]
 radius = 3.0
@@ -9,21 +10,30 @@ radius = 3.0
 [sub_resource type="CircleShape2D" id="area_shape"]
 radius = 8.0
 
-[node name="LeafPickup" type="CharacterBody2D"]
+[node name="LeafPickup" type="CharacterBody2D" unique_id=2136884912]
 collision_layer = 32
-collision_mask = 1
 script = ExtResource("1_leaf")
+value = null
+collect_delay = null
+magnet_radius = null
+magnet_speed = null
+gravity = null
+ground_friction = null
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1417357790]
 shape = SubResource("body_shape")
 
-[node name="Visual" type="Sprite2D" parent="."]
+[node name="Visual" type="Sprite2D" parent="." unique_id=365293973]
 texture = ExtResource("2_tex")
 
-[node name="PickupArea" type="Area2D" parent="."]
+[node name="PickupArea" type="Area2D" parent="." unique_id=1572059447]
 collision_layer = 32
 collision_mask = 2
 monitorable = false
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="PickupArea"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="PickupArea" unique_id=1998733581]
 shape = SubResource("area_shape")
+
+[node name="CoinSFX" type="AudioStreamPlayer2D" parent="." unique_id=262660873]
+stream = ExtResource("3_o2t6v")
+volume_db = -15.0

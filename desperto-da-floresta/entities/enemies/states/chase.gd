@@ -33,3 +33,16 @@ func physics_update(delta: float) -> void:
 		enemy.velocity.x = enemy.facing * enemy.data.move_speed
 
 	enemy.move_and_slide()
+	update_walk_sfx()
+	
+func update_walk_sfx() -> void:
+	var walk_sfx = enemy.get_node_or_null("WalkSFX")
+
+	if walk_sfx == null:
+		return
+
+	if absf(enemy.velocity.x) > 1.0 and not enemy.is_dead():
+		if not walk_sfx.playing:
+			walk_sfx.play()
+	else:
+		walk_sfx.stop()

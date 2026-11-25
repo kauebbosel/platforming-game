@@ -18,9 +18,17 @@
 [ext_resource type="Script" uid="uid://c2ym3jvflxymj" path="res://entities/player/states/dash.gd" id="15_we0b7"]
 [ext_resource type="Script" uid="uid://ch2ofmejjk7ff" path="res://components/ranged_attack_component.gd" id="16_b2kln"]
 [ext_resource type="Script" uid="uid://gotnyctk5scf" path="res://entities/player/states/dead.gd" id="16_eyb6c"]
-[ext_resource type="PackedScene" path="res://entities/projectile/projectile.tscn" id="17_b2kln"]
+[ext_resource type="PackedScene" uid="uid://cv0itw0s0bsnc" path="res://entities/projectile/projectile.tscn" id="17_b2kln"]
 [ext_resource type="Resource" uid="uid://cqmb8f2dmjcg3" path="res://entities/projectile/stone.tres" id="17_we0b7"]
 [ext_resource type="Script" uid="uid://h6kfjy1lu01h" path="res://components/blink_component.gd" id="20_mtric"]
+[ext_resource type="AudioStream" uid="uid://8t36hjdvl8ix" path="res://assets/sfx/Golpe no ar.mp3" id="22_221hk"]
+[ext_resource type="AudioStream" uid="uid://ceh887kf815we" path="res://assets/sfx/impacto fisico.mp3" id="23_ghoj8"]
+[ext_resource type="AudioStream" uid="uid://d0fef6e54qeps" path="res://assets/sfx/andar.mp3" id="24_t1t22"]
+[ext_resource type="AudioStream" uid="uid://wlyhxtvgj6x1" path="res://assets/sfx/pulo.mp3" id="25_50fht"]
+[ext_resource type="AudioStream" uid="uid://b5egyhw1mcyve" path="res://assets/sfx/aterrisagem.mp3" id="26_wuv6x"]
+[ext_resource type="AudioStream" uid="uid://gkrawhpfw8lq" path="res://assets/sfx/disparo projetil.mp3" id="27_qpopc"]
+[ext_resource type="AudioStream" uid="uid://dd7gdim574y5c" path="res://assets/sfx/item pickup.mp3" id="28_wq0jh"]
+[ext_resource type="AudioStream" uid="uid://q0un3mg8565l" path="res://assets/sfx/dano.mp3" id="29_gt4e4"]
 
 [sub_resource type="RectangleShape2D" id="body_shape"]
 size = Vector2(14, 28)
@@ -119,3 +127,42 @@ ammo = NodePath("../AmmoComponent")
 script = ExtResource("20_mtric")
 hurtbox = NodePath("../Hurtbox")
 target = NodePath("../Visual")
+
+[node name="AttackSFX" type="AudioStreamPlayer2D" parent="." unique_id=262747587]
+stream = ExtResource("22_221hk")
+volume_db = -5.0
+
+[node name="ImpactSFX" type="AudioStreamPlayer2D" parent="." unique_id=157917436]
+stream = ExtResource("23_ghoj8")
+volume_db = -3.0
+max_polyphony = 3
+
+[node name="WalkSFX" type="AudioStreamPlayer2D" parent="." unique_id=1345272606]
+stream = ExtResource("24_t1t22")
+volume_db = -10.0
+parameters/looping = true
+
+[node name="JumpSFX" type="AudioStreamPlayer2D" parent="." unique_id=953251946]
+stream = ExtResource("25_50fht")
+volume_db = -8.0
+
+[node name="LandingSFX" type="AudioStreamPlayer2D" parent="." unique_id=2097374269]
+stream = ExtResource("26_wuv6x")
+volume_db = -8.0
+
+[node name="BodoqueSFX" type="AudioStreamPlayer2D" parent="." unique_id=867649125]
+stream = ExtResource("27_qpopc")
+volume_db = -5.0
+
+[node name="RelicSFX" type="AudioStreamPlayer2D" parent="." unique_id=330415258]
+stream = ExtResource("28_wq0jh")
+volume_db = -4.86
+
+[node name="HurtSFX" type="AudioStreamPlayer2D" parent="." unique_id=273875686]
+stream = ExtResource("29_gt4e4")
+volume_db = -5.0
+
+[connection signal="damaged" from="Health" to="." method="_on_health_damaged"]
+[connection signal="active_started" from="AttackComponent" to="." method="_on_attack_component_active_started"]
+[connection signal="hit_landed" from="AttackComponent" to="." method="_on_attack_component_hit_landed"]
+[connection signal="fired" from="RangedAttackComponent" to="." method="_on_ranged_attack_component_fired"]
