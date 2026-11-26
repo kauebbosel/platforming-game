@@ -5,10 +5,8 @@ extends RefCounted
 ## com UM afixo que muda o jeito de lutar. Sem arte nova: só números do EnemyData, uma cor
 ## sobre o sprite e o nome do afixo em texto acima do inimigo.
 ##
-## Uso (a CombatRoom faz isso):
-##     EnemyAffix.prepare(enemy, id)   # ANTES de add_child: altera os números e a cor
-##     add_child(enemy)
-##     EnemyAffix.attach(enemy, id)    # DEPOIS: nome flutuante e a fúria do Furioso
+## Uso (a CombatRoom faz isso, DEPOIS de o inimigo entrar na árvore):
+##     EnemyAffix.apply(enemy, id)
 ##
 ## Cada elite usa uma CÓPIA do EnemyData (o .tres é compartilhado: mexer nele direto mudaria
 ## TODOS os inimigos daquele tipo). Os estados leem os números de `enemy.data` a cada uso, por
@@ -16,6 +14,7 @@ extends RefCounted
 ## A cor vai no `modulate` do nó RAIZ do inimigo, que os estados não usam (eles mexem só no do
 ## Sprite), então não atrapalha o brilho de dano nem a indicação de ataque. Por isso as cores
 ## são claras: multiplicadas pela indicação de ataque, ainda dá para ler o golpe se preparando.
+## Quem pode ser elite: EnemyData.can_be_elite.
 
 enum Id { VELOZ, FRENETICO, BLINDADO, FURIOSO }
 
@@ -71,9 +70,8 @@ static func tint_of(id: int) -> Color:
 	return INFO[id]["tint"] if INFO.has(id) else Color.WHITE
 
 
-## Antes de o inimigo entrar na árvore (o `_ready` dele lê o EnemyData): troca por uma cópia
-## reforçada e aplica a cor.
-static func prepare(enemy: EnemyBase, id: int) -> void:
+## Transforma o inimigo (já na árvore) em elite com o afixo `id`.
+static func apply(enemy: EnemyBase, id: int) -> void:
 	if not is_valid(id) or enemy.data == null:
 		return
 	var data: EnemyData = enemy.data.duplicate() as EnemyData
@@ -97,16 +95,17 @@ static func prepare(enemy: EnemyBase, id: int) -> void:
 			data.hurt_interrupts = false  # os golpes só o fazem piscar: sem stunlock
 			data.move_speed *= 0.85
 		Id.FURIOSO:
-			pass  # a fúria vem durante a luta (attach)
+			pass  # a fúria vem durante a luta (ver _check_enrage)
 	enemy.data = data
+	# O _ready do inimigo já copiou a vida do EnemyData antigo para o Health: refaz com a nova.
+	enemy.health.max_health = data.max_health
+	enemy.health.reset()
 	enemy.modulate = tint_of(id)
+	_add_label(enemy, id)
 
 
-## Depois de o inimigo entrar na árvore: nome flutuante acima da cabeça e, no Furioso, o gatilho
-## da fúria.
-static func attach(enemy: EnemyBase, id: int) -> void:
-	if not is_valid(id):
-		return
+## Nome flutuante acima da cabeça (texto branco: a cor do afixo vem do `modulate` do inimigo).
+static func _add_label(enemy: EnemyBase, id: int) -> void:
 	var label: Label = Label.new()
 	label.name = "AffixLabel"
 	label.text = name_of(id).to_upper()
@@ -117,7 +116,6 @@ static func attach(enemy: EnemyBase, id: int) -> void:
 	label.add_theme_font_size_override("font_size", 8)
 	label.add_theme_constant_override("outline_size", 3)
 	label.add_theme_color_override("font_outline_color", Color(0.05, 0.05, 0.1))
-	# Acima do topo do sprite. (O texto é branco: a cor do afixo vem do `modulate` do inimigo.)
 	var top: float = enemy.sprite.position.y + enemy.sprite.get_rect().position.y * absf(enemy.sprite.scale.y)
 	label.position = Vector2(-40.0, top - 14.0)
 	enemy.add_child(label)

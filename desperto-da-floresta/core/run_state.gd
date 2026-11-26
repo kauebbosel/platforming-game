@@ -32,6 +32,12 @@ var map_progress: Dictionary = {}
 ## sai igual, então ela serve para reproduzir a run de um jogador.
 var map_seed: int = 0
 
+## Elite da sala em que o Valtair está: o SceneManager preenche ao escolher o nó do mapa e a
+## CombatRoom lê ao nascer. -1 = sala comum. `elite_slot` diz qual dos inimigos da sala vira o
+## elite (o índice é contado entre os pontos de nascimento).
+var elite_affix: int = -1
+var elite_slot: int = 0
+
 
 func _ready() -> void:
 	EventBus.leaves_gained.connect(add_leaves)
@@ -91,6 +97,8 @@ func reset() -> void:
 	entry_relics.clear()
 	map_progress = {}
 	map_seed = 0
+	elite_affix = -1
+	elite_slot = 0
 
 
 func begin_room() -> void:

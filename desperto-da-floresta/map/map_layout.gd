@@ -14,13 +14,15 @@ extends RefCounted
 ## GDD-3: 11 etapas (camadas L0 a L10), sem Evento. Curupira na camada do meio (L5) e
 ## Boitatá no topo (L10). As duas Mercadoras ficam em L4 e L9, cada uma ao lado de uma Fogueira.
 
-## MINIBOSS (elite) e EVENTO continuam no enum para o MapTheme e o resto do código compilarem.
+## MINIBOSS é o ELITE (combate difícil com um inimigo reforçado, ver EnemyAffix). EVENTO
+## continua no enum só para o MapTheme e o resto do código compilarem.
 enum Kind { COMBATE, PARKOUR, MINIBOSS, MERCADORA, DESCANSO, EVENTO, MID_BOSS, BOSS }
 
 ## Nomes que aparecem na legenda.
 const KIND_NAMES := {
 	Kind.COMBATE: "Combate",
 	Kind.PARKOUR: "Parkour",
+	Kind.MINIBOSS: "Elite",
 	Kind.MERCADORA: "Mercadora",
 	Kind.DESCANSO: "Descanso",
 	Kind.MID_BOSS: "Curupira",
@@ -29,6 +31,7 @@ const KIND_NAMES := {
 
 ## Tamanho relativo do ícone (padrão 1.0). Os chefes são maiores.
 const KIND_SCALE := {
+	Kind.MINIBOSS: 1.2,
 	Kind.MID_BOSS: 1.4,
 	Kind.BOSS: 1.7,
 }
@@ -63,18 +66,20 @@ const PARKOUR_PER_LAYER := {
 ## trocar de lado.
 const SHOP_REST_LAYERS: Array[int] = [4, 9]
 
-## Elites (Kind.MINIBOSS). A sala de elite ainda não existe: deixe false até criá-la, senão o
-## nó apareceria no mapa sem sala. Ao ligar, ELITE_COUNT camadas de ELITE_LAYERS ganham 1 elite.
-const ELITES_ENABLED: bool = false
+## Elites (Kind.MINIBOSS): ELITE_COUNT camadas de ELITE_LAYERS ganham 1 elite cada (só nas
+## camadas mais adiantadas, depois de o jogador aprender o básico). Cada elite recebe um afixo
+## diferente (enquanto houver afixos) e um "slot" que diz qual inimigo da sala vira o elite.
+## Nenhum caminho é obrigado a passar por elite: sempre dá para desviar.
+const ELITES_ENABLED: bool = true
 const ELITE_LAYERS: Array[int] = [3, 6, 7, 8]
-const ELITE_COUNT: int = 3
+const ELITE_COUNT: int = 2
 
 ## Deslocamento aleatório (em coordenadas normalizadas) das posições, só para o mapa não
 ## parecer idêntico. Chefes não se mexem.
 const POS_JITTER := Vector2(0.02, 0.008)
 
 ## Tentativas de sorteio até achar um mapa que passe nas regras de _is_valid().
-const MAX_ATTEMPTS: int = 64
+const MAX_ATTEMPTS: int = 256
 
 ## O mapa-base: posições e tipos "de fábrica". Os tipos das camadas sorteadas são
 ## sobrescritos por generate(); as demais (Mercadora/Descanso/chefes) vêm daqui.
@@ -171,6 +176,34 @@ static func generate(seed_value: int) -> void:
 	_generated_seed = seed_value
 
 
+## Texto curto de cada tipo de nó (aparece ao passar o mouse sobre ele no mapa).
+const KIND_HINTS := {
+	Kind.COMBATE: "Inimigos. Recompensa: Folhas e 1 entre 2 relíquias.",
+	Kind.PARKOUR: "Percurso sem inimigos. Mais seguro, mas paga menos; terminar rápido rende Folhas extras.",
+	Kind.MINIBOSS: "Combate difícil: um dos inimigos vem reforçado. Recompensa melhor.",
+	Kind.MERCADORA: "Gaste suas Folhas.",
+	Kind.DESCANSO: "Hora de se recuperar.",
+	Kind.MID_BOSS: "Chefe.",
+	Kind.BOSS: "Chefe final.",
+}
+
+
+## Texto do tooltip de um nó. No Elite, mostra o afixo que ele terá.
+static func describe(id: String) -> String:
+	if not NODES.has(id):
+		return ""
+	var kind: int = NODES[id]["kind"]
+	var title: String = String(KIND_NAMES.get(kind, ""))
+	var lines: Array[String] = []
+	if kind == Kind.MINIBOSS:
+		var affix: int = int(NODES[id].get("affix", -1))
+		if EnemyAffix.is_valid(affix):
+			title = "Elite %s" % EnemyAffix.name_of(affix)
+			lines.append(EnemyAffix.description_of(affix))
+	lines.append(String(KIND_HINTS.get(kind, "")))
+	return title + "\n" + "\n".join(lines)
+
+
 ## "L10_A" -> 10
 static func layer_of(id: String) -> int:
 	return id.substr(1, id.find("_") - 1).to_int()
@@ -209,13 +242,16 @@ static func _roll(rng: RandomNumberGenerator) -> Dictionary:
 		for i in ids.size():
 			nodes[ids[i]]["kind"] = Kind.PARKOUR if i < parkour_count else Kind.COMBATE
 
-	# 2) Elites (desligados até a sala de elite existir).
+	# 2) Elites, cada um com um afixo diferente e o slot do inimigo que vira elite.
 	if ELITES_ENABLED:
 		var layers: Array = _shuffled(ELITE_LAYERS, rng)
+		var affixes: Array = _shuffled(EnemyAffix.all_ids(), rng)
 		for i in mini(ELITE_COUNT, layers.size()):
 			for id: String in _shuffled(by_layer[layers[i]], rng):
 				if nodes[id]["kind"] == Kind.COMBATE:
 					nodes[id]["kind"] = Kind.MINIBOSS
+					nodes[id]["affix"] = affixes[i % affixes.size()]
+					nodes[id]["elite_slot"] = rng.randi_range(0, 2)
 					break
 
 	# 3) Mercadora e Descanso: às vezes trocam de lado.

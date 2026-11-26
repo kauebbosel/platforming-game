@@ -135,8 +135,14 @@ func _on_room_exit_requested() -> void:
 func _on_map_node_chosen(id: String, kind: int) -> void:
 	_current_kind = kind
 	RunState.map_progress = _map.export_progress()
+	# Elite: qual afixo e qual inimigo da sala vira o elite (-1 = sala comum).
+	RunState.elite_affix = -1
+	if kind == MapLayout.Kind.MINIBOSS:
+		var info: Dictionary = MapLayout.NODES.get(id, {})
+		RunState.elite_affix = int(info.get("affix", -1))
+		RunState.elite_slot = int(info.get("elite_slot", 0))
 	match kind:
-		MapLayout.Kind.COMBATE:
+		MapLayout.Kind.COMBATE, MapLayout.Kind.MINIBOSS:  # o elite usa a mesma sala de combate
 			enter_room(COMBAT_ROOM_SCENE)
 		MapLayout.Kind.DESCANSO:
 			enter_room(REST_SITE_SCENE)

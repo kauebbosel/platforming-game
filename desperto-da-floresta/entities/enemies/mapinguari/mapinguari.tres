@@ -4,4 +4,11 @@
 
 [resource]
 script = ExtResource("1_laye5")
+max_health = 80
+move_speed = 30.0
 attack_range = 46.0
+attack_cooldown = 1.4
+double_scratch_chance = 0.3
+leaves_min = 4
+leaves_max = 6
+hurt_interrupts = false

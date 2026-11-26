@@ -23,6 +23,13 @@ signal cleared
 @export var reward_rarities: Array[RelicData.Rarity] = [RelicData.Rarity.COMMON, RelicData.Rarity.UNCOMMON]
 ## Onde o CENTRO do grupo de pedestais fica, relativo à porta de saída.
 @export var reward_offset: Vector2 = Vector2(-80.0, 22.0)
+## Sala de Elite (nó "Elite" do mapa): UM dos inimigos nasce reforçado e com um afixo (ver
+## EnemyAffix). A recompensa é maior e a escolha de relíquia vem de raridades melhores.
+@export var elite_bonus_leaves: int = 25
+@export var elite_choices: int = 2
+@export var elite_rarities: Array[RelicData.Rarity] = [RelicData.Rarity.UNCOMMON, RelicData.Rarity.RARE]
+## Quanto tempo o aviso do elite fica na tela ao entrar (s).
+@export var elite_banner_time: float = 4.0
 
 @onready var _spawns: Node = $Spawns
 @onready var _exit: Area2D = $ExitDoor
@@ -32,6 +39,11 @@ var _alive: int = 0
 var _is_cleared: bool = false
 var _player_at_exit: bool = false
 var _exit_requested: bool = false
+## Inimigos que nasceram (para escolher quem vira elite).
+var _enemies: Array[EnemyBase] = []
+## Afixo do elite desta sala (-1 = sala comum). O mapa decide, via RunState.
+var _elite_affix: int = -1
+var _elite_name: String = ""
 
 
 func _ready() -> void:
@@ -46,6 +58,8 @@ func _ready() -> void:
 			_spawn_at(marker as Marker2D)
 	if _alive == 0:
 		_clear()
+	elif EnemyAffix.is_valid(RunState.elite_affix):
+		_make_elite(RunState.elite_affix, RunState.elite_slot)  # sala de Elite
 
 
 func alive_enemies() -> int:
@@ -71,6 +85,7 @@ func _spawn_enemy(scene: PackedScene, at: Vector2) -> void:
 	var enemy: EnemyBase = scene.instantiate() as EnemyBase
 	enemy.position = at
 	add_child(enemy)
+	_enemies.append(enemy)
 	enemy.health.died.connect(_on_enemy_died)
 	_alive += 1
 
@@ -87,15 +102,18 @@ func _clear() -> void:
 	_exit.set_deferred("monitoring", true)
 	var key: String = InputHint.key_name(&"interact")
 	var player: Player = get_tree().get_first_node_in_group(&"player") as Player
-	var bonus: int = clear_bonus_leaves
+	var is_elite: bool = _elite_affix >= 0
+	var base_bonus: int = elite_bonus_leaves if is_elite else clear_bonus_leaves
+	var title: String = "Elite derrotado!" if is_elite else "Sala limpa!"
+	var bonus: int = base_bonus
 	if player != null:
-		bonus = roundi(clear_bonus_leaves * player.stats.leaf_bonus_mult)  # Amuleto de Madeira
+		bonus = roundi(base_bonus * player.stats.leaf_bonus_mult)  # Amuleto de Madeira
 		player.on_room_cleared()  # Flor da Vitória-Régia
 	if bonus > 0:
 		EventBus.leaves_gained.emit(bonus)
-		_message.text = "Sala limpa!  +%d Folhas  [%s] na porta para sair" % [bonus, key]
+		_message.text = "%s  +%d Folhas  [%s] na porta para sair" % [title, bonus, key]
 	else:
-		_message.text = "Sala limpa!  [%s] na porta para sair" % key
+		_message.text = "%s  [%s] na porta para sair" % [title, key]
 	# As Folhas que ficaram no chão vão até o Valtair (dá um instante para as últimas caírem).
 	get_tree().create_timer(0.6).timeout.connect(_attract_leaves)
 	var offered: int = _spawn_relic_reward()
@@ -118,7 +136,43 @@ func _spawn_relic_reward() -> int:
 	if not give_relic_reward:
 		return 0
 	var anchor: Vector2 = _exit.global_position + reward_offset
-	return RelicDraft.spawn(self, relic_pool, reward_rarities, reward_choices, anchor, reward_spacing).size()
+	var is_elite: bool = _elite_affix >= 0
+	var choices: int = elite_choices if is_elite else reward_choices
+	var rarities: Array = elite_rarities if is_elite else reward_rarities
+	return RelicDraft.spawn(self, relic_pool, rarities, choices, anchor, reward_spacing).size()
+
+
+## Sala de Elite: entre os inimigos que nasceram, escolhe quem vira elite (só os que têm
+## EnemyData.can_be_elite; se nenhum tiver, vale qualquer um) e aplica o afixo. O `slot` vem do
+## mapa e desempata de forma reproduzível (mesma semente = mesmo elite).
+func _make_elite(affix: int, slot: int) -> void:
+	var eligible: Array[EnemyBase] = []
+	for enemy in _enemies:
+		if enemy.data != null and enemy.data.can_be_elite:
+			eligible.append(enemy)
+	if eligible.is_empty():
+		eligible = _enemies.duplicate()
+	if eligible.is_empty():
+		return
+	var elite: EnemyBase = eligible[slot % eligible.size()]
+	EnemyAffix.apply(elite, affix)
+	_elite_affix = affix
+	_elite_name = elite.scene_file_path.get_file().get_basename().capitalize()  # "corpo_seco" -> "Corpo Seco"
+	if _elite_name.is_empty():
+		_elite_name = String(elite.name)
+	_show_elite_banner()
+
+
+## Aviso ao entrar numa sala de Elite: nome do inimigo + afixo e o que ele faz.
+func _show_elite_banner() -> void:
+	_message.text = "ELITE: %s %s\n%s" % [_elite_name, EnemyAffix.name_of(_elite_affix), EnemyAffix.description_of(_elite_affix)]
+	_message.visible = true
+	get_tree().create_timer(elite_banner_time).timeout.connect(_hide_elite_banner)
+
+
+func _hide_elite_banner() -> void:
+	if not _is_cleared:
+		_message.visible = false
 
 
 func _attract_leaves() -> void:

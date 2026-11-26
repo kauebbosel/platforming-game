@@ -89,3 +89,8 @@ extends Resource
 @export_group("Sementes")
 @export var seed_count: int = 3
 @export var seed_spread_degrees: float = 14.0
+
+@export_group("Elite")
+## Pode virar elite (receber um afixo)? Desmarque nos que já têm identidade própria (o Mapinguari,
+## que não recua) ou são fracos de propósito (o Corpo Seco, feito para hordas).
+@export var can_be_elite: bool = true

@@ -168,6 +168,7 @@ func _build_views() -> void:
 		var v := MapNodeView.new()
 		v.name = id
 		v.setup(id, kind, map_theme.icon_for(kind), diameter, map_theme.pixel_art)
+		v.tooltip_text = MapLayout.describe(id)  # ao passar o mouse (no Elite, mostra o afixo)
 		v.chosen.connect(_on_view_chosen)
 		add_child(v)
 		_views[id] = v

@@ -95,3 +95,34 @@ func _draw() -> void:
 		var letter := MapTheme.fallback_letter(kind)
 		var fs := int(icon_diameter * 0.5)
 		draw_string(f, Vector2(0.0, c.y + fs * 0.35), letter, HORIZONTAL_ALIGNMENT_CENTER, size.x, fs, Color(1, 1, 1, tint.a))
+
+
+## Tooltip compacto: o padrão da Godot sai enorme na resolução do jogo e não quebra linha.
+## A primeira linha do texto vira o título.
+func _make_custom_tooltip(for_text: String) -> Object:
+	var parts: PackedStringArray = for_text.split("\n", true, 1)
+	var panel: PanelContainer = PanelContainer.new()
+	var style: StyleBoxFlat = StyleBoxFlat.new()
+	style.bg_color = Color(0.03, 0.06, 0.04, 0.94)
+	style.border_color = Color(1.0, 0.88, 0.45, 0.55)
+	style.set_border_width_all(1)
+	style.set_corner_radius_all(3)
+	style.set_content_margin_all(5)
+	panel.add_theme_stylebox_override("panel", style)
+	var box: VBoxContainer = VBoxContainer.new()
+	box.add_theme_constant_override("separation", 2)
+	panel.add_child(box)
+	var title: Label = Label.new()
+	title.text = parts[0]
+	title.add_theme_font_size_override("font_size", 9)
+	title.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
+	box.add_child(title)
+	if parts.size() > 1:
+		var body: Label = Label.new()
+		body.text = parts[1]
+		body.custom_minimum_size = Vector2(150.0, 0.0)
+		body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		body.add_theme_font_size_override("font_size", 8)
+		body.add_theme_color_override("font_color", Color(0.93, 0.95, 0.9))
+		box.add_child(body)
+	return panel

@@ -5,8 +5,8 @@
 [resource]
 script = ExtResource("1_atk")
 id = &"mapinguari_claw"
-damage = 10
-knockback = Vector2(120, -40)
-startup_frames = 24
-active_frames = 6
-recovery_frames = 20
+damage = 14
+knockback = Vector2(200, -60)
+startup_frames = 36
+active_frames = 8
+recovery_frames = 34
