@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="AttackData" format=3]
+
+[ext_resource type="Script" path="res://data/attack_data.gd" id="1_atk"]
+
+[resource]
+script = ExtResource("1_atk")
+id = &"corpo_seco_claw"
+damage = 6
+knockback = Vector2(100, -30)
+startup_frames = 20
+active_frames = 6
+recovery_frames = 24

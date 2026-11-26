@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="EnemyData" format=3]
+
+[ext_resource type="Script" path="res://data/enemy_data.gd" id="1_data"]
+
+[resource]
+script = ExtResource("1_data")
+max_health = 12
+move_speed = 55.0
+detect_range = 200.0
+attack_range = 40.0
+attack_cooldown = 1.4
+double_scratch_chance = 0.0
+leaves_min = 1
+leaves_max = 2
+knockback_scale = 0.8
+can_be_elite = false
