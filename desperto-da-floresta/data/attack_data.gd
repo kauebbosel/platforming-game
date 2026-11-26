@@ -12,7 +12,7 @@ enum DamageType { PHYSICAL, FIRE }
 ## x positivo empurra para longe do atacante (a direção é aplicada em runtime)
 @export var knockback: Vector2 = Vector2(180, -80)
 @export var hitstun: float = 0.2
-@export var hitstop_frames: int = 3
+@export var hitstop_frames: int = 2
 @export_group("Tempo (em frames de física)")
 @export var startup_frames: int = 4
 @export var active_frames: int = 4

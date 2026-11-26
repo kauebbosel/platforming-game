@@ -13,12 +13,6 @@ radius = 8.0
 [node name="LeafPickup" type="CharacterBody2D" unique_id=2136884912]
 collision_layer = 32
 script = ExtResource("1_leaf")
-value = null
-collect_delay = null
-magnet_radius = null
-magnet_speed = null
-gravity = null
-ground_friction = null
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1417357790]
 shape = SubResource("body_shape")

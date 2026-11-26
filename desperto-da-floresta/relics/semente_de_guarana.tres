@@ -13,6 +13,6 @@ value = 1.2
 script = ExtResource("1_relic")
 id = &"semente_de_guarana"
 display_name = "Semente de Guaraná"
-description = "Aumenta em 20% a velocidade dos ataques corpo a corpo."
+description = "Aumenta em 20% a velocidade dos golpes"
 icon = ExtResource("3_icon")
 modifiers = Array[ExtResource("2_mod")]([SubResource("Resource_mod")])

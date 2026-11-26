@@ -51,8 +51,10 @@ extends Resource
 @export var post_dash_damage_mult: float = 1.0
 ## Dano dos golpes corpo a corpo dados no ar (Garras do Gavião).
 @export var air_damage_mult: float = 1.0
-## Dano (golpe e bodoque) quando a vida está baixa, abaixo de 35% (Dente de Piranha).
+## Dano (golpe e bodoque) quando a vida está baixa (Dente de Piranha).
 @export var low_health_damage_mult: float = 1.0
+## "Vida baixa" = vida atual até esta fração da vida máxima (0.35 = 35%). Ajuste aqui.
+@export_range(0.05, 1.0, 0.05) var low_health_threshold: float = 0.35
 ## Vida recuperada ao concluir um combate (Flor da Vitória-Régia).
 @export var heal_on_clear: int = 0
 ## Dano devolvido a quem machuca o Valtair (Espinhos da Floresta).

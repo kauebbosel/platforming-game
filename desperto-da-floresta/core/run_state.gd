@@ -28,6 +28,10 @@ var entry_relics: Array[RelicData] = []
 ## Progresso no mapa (formato do MapScreen.export_progress()). Vazio = origem.
 var map_progress: Dictionary = {}
 
+## Semente do sorteio do mapa desta run (ver MapLayout.generate). Com a mesma semente o mapa
+## sai igual, então ela serve para reproduzir a run de um jogador.
+var map_seed: int = 0
+
 
 func _ready() -> void:
 	EventBus.leaves_gained.connect(add_leaves)
@@ -86,6 +90,7 @@ func reset() -> void:
 	relics.clear()
 	entry_relics.clear()
 	map_progress = {}
+	map_seed = 0
 
 
 func begin_room() -> void:

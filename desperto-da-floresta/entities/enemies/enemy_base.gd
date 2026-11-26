@@ -10,6 +10,8 @@ extends CharacterBody2D
 ## Para voador: basta marcar EnemyData.flying (o modo de movimento é ajustado em _ready).
 
 const LEAF_SCENE: PackedScene = preload("res://entities/pickups/leaf_pickup.tscn")
+## Mostra o número de dano sobre o inimigo atingido (laranja com "!" = golpe potencializado).
+const SHOW_DAMAGE_NUMBERS: bool = true
 
 @export var data: EnemyData
 ## Marque se a arte original olha para a direita (desmarque se olhar para a esquerda).
@@ -40,6 +42,7 @@ func _ready() -> void:
 	health.reset()
 	hurtbox.hit_received.connect(_on_hit_received)
 	health.died.connect(_on_died)
+	health.damaged.connect(_show_damage_number)
 	state_machine.init(self)
 
 
@@ -106,6 +109,14 @@ func _flash_hit() -> void:
 	create_tween().tween_property(sprite, "self_modulate", Color.WHITE, 0.12)
 
 
+## Número de dano sobre o inimigo (desligue com SHOW_DAMAGE_NUMBERS = false).
+func _show_damage_number(amount: int, source: Node) -> void:
+	if not SHOW_DAMAGE_NUMBERS:
+		return
+	var empowered: bool = source != null and "last_hit_empowered" in source and source.last_hit_empowered
+	DamageNumber.spawn(get_parent(), global_position + Vector2(0.0, -30.0), amount, empowered)
+
+
 func _on_died() -> void:
 	get_tree().call_group(&"player", &"on_enemy_killed")  # Maldição do Mapinguari
 	_drop_leaves()
@@ -128,16 +139,3 @@ func _spawn_leaf(at: Vector2) -> void:
 	parent.add_child(leaf)
 	leaf.global_position = at
 	leaf.pop(Vector2(randf_range(-60.0, 60.0), randf_range(-160.0, -110.0)))
-
-
-func _on_attack_component_active_started() -> void:
-	$ChargeSFX.play(1)
-	$FireSFX.stop()
-
-
-func _on_attack_component_active_ended() -> void:
-	$ChargeSFX.stop()
-
-
-func _on_attack_component_attack_started() -> void:
-	$FireSFX.play()

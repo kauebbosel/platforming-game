@@ -8,19 +8,20 @@ extends Node2D
 
 signal cleared
 
-const PEDESTAL_SCENE: PackedScene = preload("res://entities/pickups/relic_pedestal.tscn")
-
 ## Inimigo padrão: nasce nos pontos que não escolhem o próprio (ex.: corpo_seco.tscn).
 ## Pode ficar vazio se todo ponto de nascimento for um EnemySpawn com inimigo definido.
 @export var enemy_scene: PackedScene
 ## Folhas que a sala dá de bônus ao ser limpa (além das que os inimigos soltam).
 @export var clear_bonus_leaves: int = 10
-## Ao limpar a sala, uma relíquia aparece sobre um pedestal perto da porta (GDD: combate dá
-## relíquia garantida; as raras só na loja e no Curupira).
+## Ao limpar a sala, aparecem `reward_choices` relíquias sobre pedestais perto da porta e o
+## jogador leva UMA (as outras somem). As raras só na loja e no Curupira.
 @export var give_relic_reward: bool = true
+@export var reward_choices: int = 2
+## Distância entre os pedestais da escolha.
+@export var reward_spacing: float = 56.0
 @export var relic_pool: RelicPool = preload("res://relics/relic_pool.tres")
 @export var reward_rarities: Array[RelicData.Rarity] = [RelicData.Rarity.COMMON, RelicData.Rarity.UNCOMMON]
-## Onde o pedestal fica, relativo à porta de saída.
+## Onde o CENTRO do grupo de pedestais fica, relativo à porta de saída.
 @export var reward_offset: Vector2 = Vector2(-80.0, 22.0)
 
 @onready var _spawns: Node = $Spawns
@@ -97,7 +98,10 @@ func _clear() -> void:
 		_message.text = "Sala limpa!  [%s] na porta para sair" % key
 	# As Folhas que ficaram no chão vão até o Valtair (dá um instante para as últimas caírem).
 	get_tree().create_timer(0.6).timeout.connect(_attract_leaves)
-	if _spawn_relic_reward():
+	var offered: int = _spawn_relic_reward()
+	if offered > 1:
+		_message.text += "\nEscolha 1 de %d relíquias: [%s] sobre a que quiser (as outras somem)" % [offered, key]
+	elif offered == 1:
 		_message.text += "\nUma relíquia apareceu: [%s] sobre ela para pegar" % key
 	_message.visible = true
 	cleared.emit()
@@ -109,18 +113,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		EventBus.room_exit_requested.emit()
 
 
-## Cria o pedestal com uma relíquia que o jogador ainda não tem. Retorna se criou.
-func _spawn_relic_reward() -> bool:
-	if not give_relic_reward or relic_pool == null:
-		return false
-	var relic: RelicData = relic_pool.pick_random(RunState.relics, reward_rarities)
-	if relic == null:
-		return false
-	var pedestal: RelicPedestal = PEDESTAL_SCENE.instantiate() as RelicPedestal
-	pedestal.relic = relic
-	add_child(pedestal)
-	pedestal.global_position = _exit.global_position + reward_offset
-	return true
+## Cria os pedestais da escolha (relíquias que o jogador ainda não tem). Retorna quantos criou.
+func _spawn_relic_reward() -> int:
+	if not give_relic_reward:
+		return 0
+	var anchor: Vector2 = _exit.global_position + reward_offset
+	return RelicDraft.spawn(self, relic_pool, reward_rarities, reward_choices, anchor, reward_spacing).size()
 
 
 func _attract_leaves() -> void:

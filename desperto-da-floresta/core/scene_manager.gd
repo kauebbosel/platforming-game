@@ -34,6 +34,9 @@ func _ready() -> void:
 func start_run() -> void:
 	_current_kind = -1
 	RunState.start_run()
+	# Sorteia a semente do mapa desta run (ou usa a forçada, para testes).
+	RunState.map_seed = MapLayout.DEBUG_FORCED_SEED if MapLayout.DEBUG_FORCED_SEED != 0 else randi_range(100000, 999999)
+	print("[Run] semente do mapa: %d" % RunState.map_seed)
 	await go_to_map()
 	# Introdução de cada partida (GDD 7.1): poema pulável por cima do mapa.
 	if _map != null:
@@ -41,6 +44,10 @@ func start_run() -> void:
 
 
 func go_to_map() -> void:
+	# O mapa precisa estar sorteado ANTES de a cena do mapa ler o MapLayout. É idempotente:
+	# a mesma semente sempre dá o mesmo mapa, então chamar a cada volta ao mapa é seguro.
+	if RunState.run_active:
+		MapLayout.generate(RunState.map_seed)
 	get_tree().change_scene_to_file(MAP_SCENE)
 	await get_tree().scene_changed
 	_map = get_tree().current_scene as MapScreen

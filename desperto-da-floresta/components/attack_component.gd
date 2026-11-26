@@ -43,7 +43,12 @@ func _ready() -> void:
 	hitbox.source = body
 	hitbox.damage = roundi(attack_data.damage * damage_multiplier)
 	hitbox.knockback = attack_data.knockback
-	hitbox.hit_landed.connect(func(h: Hurtbox) -> void: hit_landed.emit(h))
+	hitbox.hit_landed.connect(func(h: Hurtbox) -> void:
+		hit_landed.emit(h)
+		# Peso no impacto: só nos golpes do Valtair (HitStop.ENABLED liga/desliga).
+		if body is Player:
+			HitStop.trigger(get_tree(), attack_data.hitstop_frames / 60.0)
+	)
 	_set_vfx_visible(false)
 
 

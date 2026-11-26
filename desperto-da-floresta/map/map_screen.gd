@@ -54,6 +54,7 @@ func _ready() -> void:
 	_build_marker()
 	_build_legend()
 	_build_hints()
+	_build_seed_label()
 
 	resized.connect(_layout)
 	reset()
@@ -123,7 +124,9 @@ func _unhandled_key_input(event: InputEvent) -> void:
 	if key == null or not key.pressed or key.echo:
 		return
 	match key.keycode:
-		KEY_R: reset()
+		KEY_R:
+			if not RunState.run_active:  # dentro de uma run, R desfaria o progresso do mapa
+				reset()
 		KEY_L: show_legend = not show_legend
 		KEY_H: show_hints = not show_hints
 		KEY_P: save_screenshot()
@@ -230,7 +233,7 @@ func _build_legend() -> void:
 func _build_hints() -> void:
 	_hints = Label.new()
 	_hints.name = "Hints"
-	_hints.text = "Clique num nó dourado  |  R reinicia  |  L legenda  |  H esconde dicas  |  P salva PNG"
+	_hints.text = "Clique num nó dourado  |  L legenda  |  H esconde dicas" if RunState.run_active else "Clique num nó dourado  |  R reinicia  |  L legenda  |  H esconde dicas  |  P salva PNG"
 	_hints.add_theme_font_size_override("font_size", 8)
 	_hints.add_theme_color_override("font_color", Color(1, 1, 1, 0.55))
 	_hints.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
@@ -238,6 +241,20 @@ func _build_hints() -> void:
 	_hints.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_hints.visible = show_hints
 	add_child(_hints)
+
+
+## Semente do mapa no canto inferior direito, para o jogador anotar no formulário.
+func _build_seed_label() -> void:
+	if not RunState.run_active:
+		return
+	var label := Label.new()
+	label.name = "SeedLabel"
+	label.text = "Semente do mapa: %d" % RunState.map_seed
+	label.add_theme_font_size_override("font_size", 8)
+	label.add_theme_color_override("font_color", Color(1, 1, 1, 0.55))
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(label)
+	label.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT, Control.PRESET_MODE_MINSIZE, 6)
 
 
 # ---------------------------------------------------------------- layout

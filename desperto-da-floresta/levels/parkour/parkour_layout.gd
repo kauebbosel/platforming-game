@@ -12,6 +12,11 @@ extends Node2D
 
 @export var bounds: Rect2 = Rect2(0, 0, 1280, 480)
 @export var layout_name: String = ""
+## Metas de tempo do percurso, em segundos (contadas desde o primeiro movimento). Até
+## `target_time` o bônus de Folhas por tempo é máximo; em `limit_time` ou mais é zero; entre os
+## dois é proporcional. Ajuste por percurso no Inspetor depois de cronometrar uma passada.
+@export var target_time: float = 25.0
+@export var limit_time: float = 60.0
 
 
 func player_start() -> Vector2:

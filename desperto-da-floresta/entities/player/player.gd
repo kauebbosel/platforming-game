@@ -46,12 +46,14 @@ var nearby_vine: Node2D = null
 var climb_regrab_left: float = 0.0
 
 # Valores de fábrica; as relíquias são aplicadas sobre uma CÓPIA em refresh_stats().
-## Abaixo desta fração da vida máxima conta como "vida baixa" (Dente de Piranha).
-const LOW_HEALTH_THRESHOLD: float = 0.35
 ## Janela, depois de um dash, em que o próximo golpe conta como "logo após o dash" (Pena Encantada).
 const POST_DASH_DAMAGE_WINDOW: float = 1.5
 ## Invulnerabilidade logo depois de uma relíquia salvar o Valtair da morte.
 const DEATH_SAVE_INVULNERABILITY: float = 1.5
+
+## O último golpe (corpo a corpo ou tiro) saiu potencializado por uma relíquia? Os números de
+## dano dos inimigos usam isto para destacar o acerto.
+var last_hit_empowered: bool = false
 
 var _prev_state_name: String = ""
 var _post_dash_damage_left: float = 0.0
@@ -219,7 +221,6 @@ func grant_relic(relic: RelicData) -> void:
 	var gained: int = health.max_health - old_max
 	if gained > 0:
 		health.heal(gained)
-	$RelicSFX.play()
 
 
 func is_dead() -> bool:
@@ -291,6 +292,7 @@ func _on_damaged(_amount: int, source: Node) -> void:
 		return
 	var target: HealthComponent = source.get_node_or_null("Health") as HealthComponent
 	if target != null:
+		last_hit_empowered = false
 		target.take_damage(stats.thorns_damage, self)
 
 
@@ -316,15 +318,18 @@ func _melee_extra_mult() -> float:
 	if _post_dash_damage_left > 0.0:
 		mult *= stats.post_dash_damage_mult  # Pena Encantada: só o primeiro golpe
 		_post_dash_damage_left = 0.0
+	last_hit_empowered = not is_equal_approx(mult, 1.0)
 	return mult
 
 
 func _ranged_extra_mult() -> float:
-	return _low_health_mult()
+	var mult: float = _low_health_mult()
+	last_hit_empowered = not is_equal_approx(mult, 1.0)
+	return mult
 
 
 func _low_health_mult() -> float:
-	if health.health <= health.max_health * LOW_HEALTH_THRESHOLD:
+	if health.health <= health.max_health * stats.low_health_threshold:
 		return stats.low_health_damage_mult  # Dente de Piranha
 	return 1.0
 
@@ -442,23 +447,3 @@ func _unhandled_key_input(event: InputEvent) -> void:
 				print("Relíquia: ", relic.display_name)
 		KEY_F5:  # morte normal (reinicia a sala)
 			health.take_damage(health.health)
-
-
-func _on_attack_component_active_started() -> void:
-		$AttackSFX.pitch_scale = randf_range(0.9, 1.1)
-		$AttackSFX.play(0.5)
-
-
-func _on_attack_component_hit_landed(hurtbox: Hurtbox) -> void:
-	$ImpactSFX.pitch_scale = randf_range(0.9, 1.1)
-	$ImpactSFX.play()
-
-
-func _on_ranged_attack_component_fired() -> void:
-	$BodoqueSFX.pitch_scale = randf_range(0.95, 1.05)
-	$BodoqueSFX.play()
-
-
-func _on_health_damaged(amount: int, source: Node) -> void:
-	$HurtSFX.pitch_scale = randf_range(0.95, 1.05)
-	$HurtSFX.play()
