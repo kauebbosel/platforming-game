@@ -58,7 +58,8 @@ func _fire(direction: Vector2, side: int) -> bool:
 	body.get_parent().add_child(projectile)
 	projectile.global_position = body.global_position + Vector2(muzzle_offset.x * side, muzzle_offset.y)
 	var extra: float = dynamic_damage_mult.call() if dynamic_damage_mult.is_valid() else 1.0
-	projectile.setup(projectile_data, direction, body, damage_multiplier * extra, speed_multiplier)
+	# Teto de segurança no multiplicador TOTAL (permanente x condicionais).
+	projectile.setup(projectile_data, direction, body, minf(damage_multiplier * extra, StatLimits.MAX_HIT_DAMAGE_MULT), speed_multiplier)
 
 	_cooldown_left = cooldown
 	fired.emit()

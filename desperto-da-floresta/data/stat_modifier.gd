@@ -16,6 +16,10 @@ func apply(stats: Object) -> void:
 		push_warning("StatModifier: o PlayerStats não tem o campo '%s'." % stat)
 		return
 	var current: Variant = stats.get(stat)
-	var result: float = (current + value) if op == Op.ADD else (current * value)
+	var base: float = float(current)
+	var result: float = (base + value) if op == Op.ADD else (base * value)
 	# Campos inteiros (ex.: bônus de vida) continuam inteiros.
-	stats.set(stat, roundi(result) if typeof(current) == TYPE_INT else result)
+	if typeof(current) == TYPE_INT:
+		stats.set(stat, roundi(result))
+	else:
+		stats.set(stat, result)

@@ -21,3 +21,8 @@ signal room_exit_requested
 signal leaves_gained(amount: int)
 @warning_ignore("unused_signal")
 signal leaves_changed(total: int)
+
+## Um ou mais atributos do Valtair acabaram de bater no limite (ver StatLimits). `stats` é a
+## lista de nomes de campo (StringName). Só dispara na transição, não a cada recálculo.
+@warning_ignore("unused_signal")
+signal stat_limit_reached(stats: Array)

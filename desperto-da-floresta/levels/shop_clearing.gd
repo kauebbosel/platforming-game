@@ -157,6 +157,10 @@ func _rebuild_rows(focus_index: int) -> void:
 			button.text += "   " + reason
 			button.disabled = true
 		else:
+			# Aviso no próprio botão se a relíquia não ajudaria em algo (já no limite).
+			var preview: Dictionary = _relic_preview(offer)
+			if not (preview.get("no_effect", []) as Array).is_empty():
+				button.text += "   [no limite]"
 			button.pressed.connect(_on_offer_pressed.bind(i))
 			if first_enabled == null:
 				first_enabled = button
@@ -194,6 +198,16 @@ func _show_description(index: int) -> void:
 			_description.text = "Enche as pedras do bodoque."
 		Kind.RELIC:
 			_description.text = String(offer["description"])
+			var warning: String = StatLimits.preview_text(_relic_preview(offer))
+			if warning != "":
+				_description.text += "\n" + warning.replace("\n", "; ")
+
+
+## O que a relíquia à venda faria com os limites de atributos (vazio se não for relíquia).
+func _relic_preview(offer: Dictionary) -> Dictionary:
+	if offer["kind"] != Kind.RELIC or offer["relic"] == null:
+		return {}
+	return _player.preview_relic(offer["relic"] as RelicData)
 
 
 func _on_offer_pressed(index: int) -> void:

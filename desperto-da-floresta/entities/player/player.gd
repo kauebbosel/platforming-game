@@ -223,6 +223,12 @@ func grant_relic(relic: RelicData) -> void:
 		health.heal(gained)
 
 
+## O que esta relíquia faria com os limites de atributos se o Valtair a pegasse agora
+## (pedestal e loja usam para avisar antes). Ver RunState.preview_relic().
+func preview_relic(relic: RelicData) -> Dictionary:
+	return RunState.preview_relic(relic, _base_stats)
+
+
 func is_dead() -> bool:
 	return health.health <= 0
 

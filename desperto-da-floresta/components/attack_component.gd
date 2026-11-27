@@ -96,7 +96,8 @@ func enter_active() -> void:
 	state = State.ACTIVE
 	_timer = attack_data.active_time()
 	var extra: float = dynamic_damage_mult.call() if dynamic_damage_mult.is_valid() else 1.0
-	hitbox.damage = roundi(attack_data.damage * damage_multiplier * extra)
+	# Teto de segurança no multiplicador TOTAL (permanente x condicionais).
+	hitbox.damage = roundi(attack_data.damage * minf(damage_multiplier * extra, StatLimits.MAX_HIT_DAMAGE_MULT))
 	hitbox.knockback = attack_data.knockback
 	hitbox.activate()
 	_set_vfx_visible(true)

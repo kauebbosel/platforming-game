@@ -117,6 +117,8 @@ var _buttons: Array[PauseButton] = []
 var _button_cursor: TextureRect
 var _desc_name: Label
 var _desc_text: Label
+## Linha de baixo da caixa de descrição: "MÁX: ..." quando a relíquia mexe num atributo no limite.
+var _desc_limit: Label
 var _stats_layer: Control
 var _stat_leaves: Label
 
@@ -238,10 +240,27 @@ func _refresh() -> void:
 	var chosen: RelicData = null
 	if _area == Area.GRID and _grid_index < _relics.size():
 		chosen = _relics[_grid_index]
+	_desc_limit.text = ""
 	if chosen != null:
 		_desc_name.text = chosen.display_name
 		_desc_name.add_theme_color_override("font_color", RARITY_COLORS[chosen.rarity])
 		_desc_text.text = "[%s]  %s" % [RARITY_NAMES[chosen.rarity], chosen.description]
+		# Atributos desta relíquia que já estão no limite.
+		var capped_names: Array[String] = []
+		for modifier in chosen.modifiers:
+			var capped_label: String = StatLimits.label(modifier.stat)
+			if RunState.capped_stats.has(modifier.stat) and not capped_names.has(capped_label):
+				capped_names.append(capped_label)
+		if not capped_names.is_empty():
+			_desc_limit.text = "MÁX: " + ", ".join(capped_names)
+	elif not RunState.capped_stats.is_empty():
+		# Nada selecionado: resumo dos atributos que estão no limite.
+		var all_names: Array[String] = []
+		for stat in RunState.capped_stats:
+			all_names.append(StatLimits.label(stat))
+		_desc_name.text = "No limite"
+		_desc_name.add_theme_color_override("font_color", Color8(255, 182, 46))
+		_desc_text.text = ", ".join(all_names)
 	else:
 		_desc_name.text = ""
 		_desc_text.text = ""
@@ -463,6 +482,10 @@ func _build() -> void:
 	_desc_text.size = Vector2(DESC_SIZE.x - DESC_TEXT_POS.x * 2.0, DESC_SIZE.y - DESC_TEXT_POS.y - 16.0)
 	_desc_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	desc.add_child(_desc_text)
+	_desc_limit = _label("", 8, Color8(255, 182, 46))
+	_desc_limit.position = Vector2(DESC_TEXT_POS.x, DESC_SIZE.y - 14.0)
+	_desc_limit.size = Vector2(DESC_SIZE.x - DESC_TEXT_POS.x * 2.0, 10)
+	desc.add_child(_desc_limit)
 
 	# Vida e pedras (refeitas a cada _refresh) e Folhas.
 	_stats_layer = Control.new()
@@ -520,3 +543,4 @@ func _on_button_pressed(index: int) -> void:
 	_area = Area.BUTTONS
 	_button_index = index
 	_activate()
+

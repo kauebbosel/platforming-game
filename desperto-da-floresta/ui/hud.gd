@@ -6,7 +6,9 @@ extends CanvasLayer
 ##    quantidade cresce com a vida máxima e quebra de linha a cada `pads_per_row`; logo abaixo,
 ##    o número exato "atual / máxima";
 ##  - pedras do bodoque (cheia ou vazia);
-##  - contador de Folhas (ícone + número) no canto superior direito.
+##  - contador de Folhas (ícone + número) no canto superior direito;
+##  - aviso curto, logo abaixo das Folhas, quando um atributo do Valtair bate no limite
+##    (EventBus.stat_limit_reached; ver StatLimits).
 ## Monta tudo por código e apaga os filhos antigos da cena (a barra e as pedras provisórias),
 ## então a cena do HUD pode ser só um CanvasLayer com este script.
 
@@ -23,9 +25,12 @@ const LEAF_ICON: Texture2D = preload("res://assets/art/hud/usar-jogo/gold.png")
 ## Quantas vitórias-régias cabem numa linha antes de quebrar (cada uma ocupa 30 px).
 @export var pads_per_row: int = 10
 @export var margin: int = 6
+## Quanto tempo o aviso de "atributo no limite" fica na tela (depois some em meio segundo).
+@export var toast_seconds: float = 2.5
 
 var leaf_label: Label
 var hp_label: Label
+var toast_label: Label
 
 var _pad_row: HFlowContainer
 var _stone_row: HBoxContainer
@@ -33,6 +38,7 @@ var _pads: Array[TextureRect] = []
 var _stones: Array[TextureRect] = []
 var _pad_states: Array[StringName] = []
 var _stone_states: Array[StringName] = []
+var _toast_tween: Tween
 
 
 func _ready() -> void:
@@ -43,6 +49,7 @@ func _ready() -> void:
 	EventBus.player_health_changed.connect(_on_health_changed)
 	EventBus.player_ammo_changed.connect(_on_ammo_changed)
 	EventBus.leaves_changed.connect(_on_leaves_changed)
+	EventBus.stat_limit_reached.connect(_on_stat_limit_reached)
 
 
 ## Estado de cada vitória-régia, da primeira à última: &"full", &"half" ou &"empty".
@@ -83,6 +90,19 @@ func _build() -> void:
 	add_child(right)
 	right.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	right.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT, Control.PRESET_MODE_MINSIZE, margin)
+
+	# Aviso de atributo no limite: faixa na largura da tela, alinhada à direita, abaixo das Folhas.
+	toast_label = _outlined_label("")
+	toast_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4))
+	toast_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	toast_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	toast_label.anchor_left = 0.0
+	toast_label.anchor_right = 1.0
+	toast_label.offset_left = 0.0
+	toast_label.offset_right = -margin
+	toast_label.offset_top = margin + 22
+	toast_label.visible = false
+	add_child(toast_label)
 
 
 ## Texto branco com contorno escuro, legível sobre qualquer cenário.
@@ -139,3 +159,19 @@ func _on_ammo_changed(current: int, maximum: int) -> void:
 
 func _on_leaves_changed(total: int) -> void:
 	leaf_label.text = str(total)
+
+
+## `stats` = nomes dos atributos que acabaram de bater no limite (uma linha para cada).
+func _on_stat_limit_reached(stats: Array) -> void:
+	var lines: Array[String] = []
+	for stat in stats:
+		lines.append("%s no limite" % StatLimits.label(stat))
+	toast_label.text = "\n".join(lines)
+	toast_label.modulate.a = 1.0
+	toast_label.visible = true
+	if _toast_tween != null and _toast_tween.is_valid():
+		_toast_tween.kill()
+	_toast_tween = create_tween()
+	_toast_tween.tween_interval(toast_seconds)
+	_toast_tween.tween_property(toast_label, "modulate:a", 0.0, 0.5)
+	_toast_tween.tween_callback(toast_label.hide)
