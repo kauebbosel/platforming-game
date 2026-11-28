@@ -65,6 +65,7 @@ var _base_stats: PlayerStats
 var _base_max_health: int = 100
 
 var _was_on_floor: bool = false
+var _ledge_tween: Tween = null
 
 
 func _ready() -> void:
@@ -113,6 +114,7 @@ func _physics_process(delta: float) -> void:
 		climb_regrab_left -= delta
 	_try_start_climb()
 	_try_drop_through()
+	_try_ledge_snap()
 
 	# Dash: transição global, vale em qualquer estado (inclusive durante o golpe, que é cancelado).
 	# Roda antes dos estados, então a troca já vale neste mesmo frame.
@@ -151,6 +153,59 @@ func _try_drop_through() -> void:
 	if state_name != "Idle" and state_name != "Run":
 		return
 	drop_through_floor(0.3)
+
+
+## Ledge snap: faltou um pouquinho para subir na plataforma (os pés ficaram logo abaixo do topo,
+## ou o corpo só encostou na borda). Segurando [W] ou [Espaço], perto do ápice do pulo, ele é
+## puxado para cima da plataforma. Funciona em plataformas finas (one-way) e em chão sólido.
+## Roda antes dos estados, como o dash; o estado Fall/Jump pousa normalmente no frame seguinte.
+func _try_ledge_snap() -> void:
+	if stats.ledge_snap_height <= 0.0 or is_on_floor():
+		return
+	if not (Input.is_action_pressed(&"jump") or Input.is_action_pressed(&"move_up")):
+		return
+	# Só perto do ápice (ou caindo): subindo rápido ele provavelmente passa sozinho.
+	if velocity.y < -stats.ledge_snap_max_rise_speed:
+		return
+	var state_name: String = String(state_machine.current_state.name)
+	if state_name not in ["Jump", "Fall", "Attack"]:
+		return
+
+	# 1) Quanto dá para subir sem bater a cabeça em teto sólido (plataforma fina não bloqueia).
+	var headroom: float = stats.ledge_snap_height
+	var up_hit: KinematicCollision2D = KinematicCollision2D.new()
+	if test_move(global_transform, Vector2(0.0, -headroom), up_hit):
+		headroom = up_hit.get_travel().length()
+	if headroom < 1.0:
+		return
+
+	# 2) Do ponto elevado, desce: se existe um chão entre ali e onde ele está agora, é a borda.
+	var raised: Transform2D = global_transform.translated(Vector2(0.0, -headroom))
+	var down_hit: KinematicCollision2D = KinematicCollision2D.new()
+	if not test_move(raised, Vector2(0.0, headroom), down_hit):
+		return
+	if acos(clampf(down_hit.get_normal().dot(up_direction), -1.0, 1.0)) > floor_max_angle:
+		return  # não é um chão (parede ou teto)
+	var lift: float = headroom - down_hit.get_travel().length()
+	if lift < 0.5:
+		return  # o chão já está na altura dos pés: é só um pouso normal
+
+	global_position.y -= lift
+	velocity.y = 0.0
+	jump_cut_available = false
+	_smooth_ledge_visual(lift)
+
+
+## Esconde o "pulo" de poucos pixels do snap: o sprite parte da posição antiga e sobe rápido.
+func _smooth_ledge_visual(lift: float) -> void:
+	var visual: Node2D = get_node_or_null("Visual") as Node2D
+	if visual == null:
+		return
+	if _ledge_tween != null and _ledge_tween.is_valid():
+		_ledge_tween.kill()
+	visual.position.y = lift
+	_ledge_tween = create_tween()
+	_ledge_tween.tween_property(visual, "position:y", 0.0, 0.08)
 
 
 ## Se o chão sob o Valtair é uma plataforma fina (one-way), ignora ela por `duration` segundos,

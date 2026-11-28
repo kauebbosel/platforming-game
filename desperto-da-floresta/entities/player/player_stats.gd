@@ -16,6 +16,11 @@ extends Resource
 @export_group("Assistências de Jogabilidade (Game Feel)")
 @export var coyote_time: float = 0.10
 @export var jump_buffer: float = 0.10
+## Ledge snap: se o Valtair está subindo/no ápice do pulo, segurando [W]/[Espaço], e os pés ficaram
+## até esta altura (px) ABAIXO do topo de uma plataforma, ele é puxado para cima dela. 0 = desliga.
+@export var ledge_snap_height: float = 16.0
+## O snap só vale quando a subida já está lenta (perto do ápice): velocidade de subida máxima (px/s).
+@export var ledge_snap_max_rise_speed: float = 120.0
 
 @export var fall_gravity_multiplier: float = 1.0
 
