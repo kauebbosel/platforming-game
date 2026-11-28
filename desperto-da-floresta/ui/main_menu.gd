@@ -17,6 +17,7 @@ var _selected: int = 0
 var _cursor: TextureRect
 var _opened_ms: int = 0
 var _busy: bool = false
+var _controls: ControlsPanel
 var _style_normal: StyleBox
 var _style_selected: StyleBox
 
@@ -33,6 +34,8 @@ func _ready() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if _controls != null and _controls.visible:
+		return  # a tela de controles trata o input
 	if _busy or Time.get_ticks_msec() - _opened_ms < INPUT_LOCK_MS:
 		return
 	if event.is_action_pressed(&"ui_up") or _is_key(event, KEY_W):
@@ -52,6 +55,12 @@ func _on_play() -> void:
 		return
 	_busy = true
 	SceneManager.start_run()
+
+
+func _on_controls() -> void:
+	if _busy:
+		return
+	_controls.open()
 
 
 func _on_quit() -> void:
@@ -129,14 +138,24 @@ func _build() -> void:
 	column.add_child(spacer)
 
 	_add_button("Jogar", _on_play, column)
+	_add_button("Controles", _on_controls, column)
 	if not OS.has_feature("web"):
 		_add_button("Sair", _on_quit, column)
+	# Resumo das teclas, para quem joga pela primeira vez já ver sem abrir nada.
+	var legend_spacer: Control = Control.new()
+	legend_spacer.custom_minimum_size = Vector2(0, 14)
+	column.add_child(legend_spacer)
+	column.add_child(_label(ControlsPanel.legend(), 8, Color(0.65, 0.62, 0.55)))
 
 	if ResourceLoader.exists(CURSOR_ART):
 		_cursor = TextureRect.new()
 		_cursor.texture = load(CURSOR_ART)
 		_cursor.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		add_child(_cursor)
+
+	# Por último: fica por cima de tudo e recebe o input primeiro.
+	_controls = ControlsPanel.new()
+	add_child(_controls)
 
 
 func _label(text: String, size: int, color: Color) -> Label:

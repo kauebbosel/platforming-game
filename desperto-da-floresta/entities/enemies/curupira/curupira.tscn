@@ -20,6 +20,7 @@
 [ext_resource type="Script" path="res://entities/enemies/states/hurt.gd" id="18_hurt"]
 [ext_resource type="Script" path="res://entities/enemies/states/dead.gd" id="19_dead"]
 [ext_resource type="Texture2D" path="res://assets/art/random/curupira.png" id="20_tex"]
+[ext_resource type="Script" path="res://components/sprite_animator.gd" id="99_anim"]
 
 [sub_resource type="RectangleShape2D" id="body_shape"]
 size = Vector2(26, 28)
@@ -112,3 +113,7 @@ script = ExtResource("18_hurt")
 
 [node name="Dead" type="Node" parent="StateMachine"]
 script = ExtResource("19_dead")
+
+[node name="SpriteAnimator" type="Node" parent="."]
+script = ExtResource("99_anim")
+profile = "curupira"

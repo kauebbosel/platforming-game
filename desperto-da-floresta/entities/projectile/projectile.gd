@@ -12,6 +12,8 @@ extends Area2D
 
 var _velocity: Vector2 = Vector2.ZERO
 var _life: float = 1.0
+var _anim_time: float = 0.0
+var _anim_fps: float = 10.0
 
 
 func _ready() -> void:
@@ -26,6 +28,12 @@ func setup(data: ProjectileData, direction: Vector2, shooter: CharacterBody2D, d
 	var dir: Vector2 = direction.normalized()
 	_velocity = dir * data.speed * speed_mult
 	sprite.modulate = data.tint
+	if data.texture != null:
+		sprite.texture = data.texture
+		sprite.hframes = maxi(1, data.hframes)
+		sprite.scale = Vector2.ONE * data.sprite_scale
+		sprite.offset = data.sprite_offset
+		_anim_fps = data.fps
 	_life = data.lifetime
 	hitbox.damage = roundi(data.damage * damage_mult)
 	hitbox.team = data.team
@@ -39,6 +47,9 @@ func setup(data: ProjectileData, direction: Vector2, shooter: CharacterBody2D, d
 
 func _physics_process(delta: float) -> void:
 	global_position += _velocity * delta
+	if sprite.hframes > 1:
+		_anim_time += delta
+		sprite.frame = int(_anim_time * _anim_fps) % sprite.hframes
 	_life -= delta
 	if _life <= 0.0:
 		queue_free()

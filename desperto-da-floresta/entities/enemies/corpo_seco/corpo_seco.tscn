@@ -3,19 +3,49 @@
 [ext_resource type="PackedScene" path="res://entities/enemies/mapinguari/mapinguari.tscn" id="1_base"]
 [ext_resource type="Resource" path="res://entities/enemies/corpo_seco/corpo_seco.tres" id="2_data"]
 [ext_resource type="Resource" path="res://entities/enemies/corpo_seco/corpo_seco_garra.tres" id="3_atk"]
+[ext_resource type="Texture2D" path="res://assets/art/random/corpo_seco.png" id="4_tex"]
+
+[sub_resource type="RectangleShape2D" id="cs_body"]
+size = Vector2(16, 30)
+
+[sub_resource type="RectangleShape2D" id="cs_hurt"]
+size = Vector2(22, 34)
+
+[sub_resource type="RectangleShape2D" id="cs_hit"]
+size = Vector2(24, 18)
 
 [node name="CorpoSeco" instance=ExtResource("1_base")]
-modulate = Color(0.78, 0.72, 0.6, 1)
 data = ExtResource("2_data")
+art_faces_right = false
+
+[node name="CollisionShape2D" parent="." index="0"]
+position = Vector2(0, -15)
+shape = SubResource("cs_body")
 
 [node name="Sprite2D" parent="." index="1"]
-scale = Vector2(0.85, 0.85)
+texture = ExtResource("4_tex")
+offset = Vector2(0, -16)
+
+[node name="Hurtbox" parent="." index="3"]
+position = Vector2(0, -17)
+
+[node name="CollisionShape2D" parent="Hurtbox" index="0"]
+shape = SubResource("cs_hurt")
 
 [node name="AttackComponent" parent="." index="4"]
 attack_data = ExtResource("3_atk")
+
+[node name="Hitbox" parent="AttackComponent" index="0"]
+position = Vector2(20, -20)
+
+[node name="CollisionShape2D" parent="AttackComponent/Hitbox" index="0"]
+shape = SubResource("cs_hit")
 
 [node name="RoarSFX" parent="." index="6"]
 stream = null
 
 [node name="WalkSFX" parent="." index="7"]
 pitch_scale = 1.3
+
+[node name="SpriteAnimator" parent="." index="8"]
+profile = "corpo_seco"

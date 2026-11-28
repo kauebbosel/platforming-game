@@ -1,6 +1,7 @@
 [gd_resource type="Resource" script_class="ProjectileData" format=3 uid="uid://hfdibdow1n1f"]
 
 [ext_resource type="Script" uid="uid://dyg5ax1nobbjq" path="res://data/projectile_data.gd" id="1_proj"]
+[ext_resource type="Texture2D" path="res://assets/art/anim/curupira_semente.png" id="2_seed"]
 
 [resource]
 script = ExtResource("1_proj")
@@ -8,5 +9,10 @@ speed = 160.0
 lifetime = 2.2
 damage = 10
 team = &"enemy"
-tint = Color(0.7, 0.5, 0.25, 1)
+tint = Color(1, 1, 1, 1)
 knockback = Vector2(120, -30)
+texture = ExtResource("2_seed")
+hframes = 3
+fps = 8.0
+sprite_scale = 1.5
+sprite_offset = Vector2(8.5, 6)

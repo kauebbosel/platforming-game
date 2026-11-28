@@ -16,6 +16,7 @@
 [ext_resource type="Script" uid="uid://br84h82kilyjj" path="res://entities/enemies/states/dead.gd" id="14_0qhpp"]
 [ext_resource type="AudioStream" uid="uid://c0c5mdgnkrjyx" path="res://assets/sfx/rugido.mp3" id="15_y3dpf"]
 [ext_resource type="AudioStream" uid="uid://dowauxklur23y" path="res://assets/sfx/andar pesado.mp3" id="16_t7svw"]
+[ext_resource type="Script" uid="uid://dusu5fdswrmj7" path="res://components/sprite_animator.gd" id="99_anim"]
 
 [sub_resource type="RectangleShape2D" id="body_shape"]
 size = Vector2(36, 36)
@@ -90,3 +91,7 @@ pitch_scale = 0.9
 stream = ExtResource("16_t7svw")
 volume_db = -8.0
 parameters/looping = true
+
+[node name="SpriteAnimator" type="Node" parent="." unique_id=782944145]
+script = ExtResource("99_anim")
+profile = "mapinguari"

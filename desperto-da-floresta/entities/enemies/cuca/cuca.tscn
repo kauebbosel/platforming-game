@@ -16,6 +16,7 @@
 [ext_resource type="Script" uid="uid://br84h82kilyjj" path="res://entities/enemies/states/dead.gd" id="13_dead"]
 [ext_resource type="AudioStream" uid="uid://dfjba8eigha2x" path="res://assets/sfx/cuca voando.mp3" id="15_ofcni"]
 [ext_resource type="AudioStream" uid="uid://3h0xx4tsckl8" path="res://assets/sfx/chamas caindo.mp3" id="16_ycuud"]
+[ext_resource type="Script" path="res://components/sprite_animator.gd" id="99_anim"]
 
 [sub_resource type="RectangleShape2D" id="body_shape"]
 size = Vector2(20, 24)
@@ -82,3 +83,7 @@ stream = ExtResource("16_ycuud")
 volume_db = -5.0
 
 [connection signal="fired" from="RangedAttackComponent" to="FireShotSFX" method="play"]
+
+[node name="SpriteAnimator" type="Node" parent="."]
+script = ExtResource("99_anim")
+profile = "cuca"

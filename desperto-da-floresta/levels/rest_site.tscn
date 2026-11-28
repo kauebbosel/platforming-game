@@ -4,6 +4,10 @@
 [ext_resource type="PackedScene" path="res://entities/player/player.tscn" id="2_player"]
 [ext_resource type="Script" path="res://components/camera/camera_rig.gd" id="3_cam"]
 [ext_resource type="PackedScene" path="res://ui/hud.tscn" id="4_hud"]
+[ext_resource type="Script" path="res://components/sheet_sprite.gd" id="5_sheet"]
+[ext_resource type="Texture2D" path="res://assets/art/props/campfire.png" id="6_fire"]
+[ext_resource type="Texture2D" path="res://assets/art/props/tent_small.png" id="7_tent"]
+[ext_resource type="Texture2D" path="res://assets/art/props/tall_grass.png" id="8_grass"]
 
 [sub_resource type="RectangleShape2D" id="floor_shape"]
 size = Vector2(640, 40)
@@ -53,13 +57,28 @@ collision_mask = 2
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Campfire"]
 shape = SubResource("fire_shape")
 
-[node name="Logs" type="Polygon2D" parent="Campfire"]
-color = Color(0.35, 0.22, 0.12, 1)
-polygon = PackedVector2Array(-12, 12, 12, 12, 10, 20, -10, 20)
+[node name="Sprite" type="Sprite2D" parent="Campfire"]
+position = Vector2(0, -2)
+scale = Vector2(2, 2)
+texture = ExtResource("6_fire")
+hframes = 40
+script = ExtResource("5_sheet")
+fps = 10.0
 
-[node name="Flame" type="Polygon2D" parent="Campfire"]
-color = Color(1, 0.6, 0.15, 1)
-polygon = PackedVector2Array(-8, 12, 0, -14, 8, 12)
+[node name="TentSmall" type="Sprite2D" parent="."]
+z_index = -5
+position = Vector2(445, 278)
+texture = ExtResource("7_tent")
+
+[node name="TallGrass1" type="Sprite2D" parent="."]
+z_index = -3
+position = Vector2(60, 294)
+texture = ExtResource("8_grass")
+
+[node name="TallGrass2" type="Sprite2D" parent="."]
+z_index = -3
+position = Vector2(570, 294)
+texture = ExtResource("8_grass")
 
 [node name="Player" parent="." instance=ExtResource("2_player")]
 position = Vector2(120, 309)

@@ -16,6 +16,7 @@
 [ext_resource type="Texture2D" uid="uid://cqoem8qab8k3k" path="res://assets/art/random/mula.png" id="14_tex"]
 [ext_resource type="AudioStream" uid="uid://cg86ujow8hbq5" path="res://assets/sfx/mula_andar.mp3" id="15_bi4lv"]
 [ext_resource type="AudioStream" uid="uid://crfgoskbnqrb8" path="res://assets/sfx/fogo.mp3" id="16_prwgk"]
+[ext_resource type="Script" path="res://components/sprite_animator.gd" id="99_anim"]
 
 [sub_resource type="RectangleShape2D" id="body_shape"]
 size = Vector2(26, 26)
@@ -100,3 +101,7 @@ pitch_scale = 1.78
 [connection signal="active_started" from="AttackComponent" to="." method="_on_attack_component_active_started"]
 [connection signal="attack_finished" from="AttackComponent" to="." method="_on_attack_component_attack_finished"]
 [connection signal="attack_started" from="AttackComponent" to="." method="_on_attack_component_attack_started"]
+
+[node name="SpriteAnimator" type="Node" parent="."]
+script = ExtResource("99_anim")
+profile = "mula"
